@@ -1,0 +1,2 @@
+# competitor-intelligence-system
+基于ClaudeSkill的竞品动态追踪与智能对标分析系统实战
