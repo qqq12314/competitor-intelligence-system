@@ -31,6 +31,7 @@ frontend/       前端应用
 data/sample/    样例数据
 docs/           项目文档
 reports/        报告模板与生成结果
+skills/         竞品分析 Skill 说明
 ```
 
 ## 两周交付目标
