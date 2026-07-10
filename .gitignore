@@ -1,0 +1,61 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Vector DB
+data/chroma/
+chroma/
+.vectorstore/
+
+# Node
+node_modules/
+dist/
+build/
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+
+# Local Codex workspace files
+.agents/
+.codex/
+.codex_work/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Generated reports
+reports/generated/
+
+# Local practice artifacts outside this project
+day3/
+day4/
+outputs/
+env_setup_files/
+fill_*_day_log.mjs
+fill_second_day_log.mjs
+inspect_log_workbook.mjs
