@@ -95,6 +95,6 @@ pnpm dev
 - [一周开发计划](docs/development-plan.md)
 - [Day 1 项目框架说明](docs/day1-framework.md)
 - [项目具体策划案](docs/project-plan.md)
+- [项目具体策划案 PDF](docs/project-plan.pdf)
 - [系统架构说明](docs/architecture.md)
 - [API 草案](docs/api-draft.md)
-
