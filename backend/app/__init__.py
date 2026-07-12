@@ -1,1 +1,2 @@
-"""Backend application package."""
+"""Tea and coffee micro-merchant credit risk system."""
+

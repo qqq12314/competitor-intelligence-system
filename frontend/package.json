@@ -1,21 +1,21 @@
 {
-  "name": "tea-coffee-competitor-dashboard",
-  "version": "0.1.0",
+  "name": "tea-coffee-credit-risk-dashboard",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@vitejs/plugin-vue": "latest",
-    "axios": "latest",
-    "echarts": "latest",
-    "element-plus": "latest",
-    "vite": "latest",
-    "vue": "latest",
-    "vue-router": "latest"
+    "@vitejs/plugin-vue": "^5.1.0",
+    "axios": "^1.7.0",
+    "echarts": "^5.5.0",
+    "element-plus": "^2.7.0",
+    "vite": "^5.4.0",
+    "vue": "^3.4.0"
   },
   "devDependencies": {}
 }
+
