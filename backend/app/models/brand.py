@@ -9,5 +9,5 @@ class BrandProfile(BaseModel):
     store_scale: str
     franchise_maturity: int = Field(ge=1, le=5)
     public_sentiment: str
-    risk_tags: list[str] = []
+    risk_tags: list[str] = Field(default_factory=list)
 

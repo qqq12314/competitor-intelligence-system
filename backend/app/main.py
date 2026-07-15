@@ -1,13 +1,23 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import brands, contracts, dashboard, merchants, reports, risk
 from app.core.config import settings
+from app.db.seed import initialize_database
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    initialize_database()
+    yield
 
 app = FastAPI(
     title=settings.app_name,
     description="Tea and coffee micro-merchant credit risk and business intelligence API.",
     version="0.3.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

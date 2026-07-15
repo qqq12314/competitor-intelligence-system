@@ -1,17 +1,19 @@
 from collections import Counter
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
+from app.db.session import get_db
+from app.repositories.risk_repository import list_brands, list_merchants
 from app.services.risk_scoring import score_merchant
-from app.services.sample_loader import load_brands, load_merchants
 
 router = APIRouter()
 
 
 @router.get("/summary")
-def dashboard_summary() -> dict:
-    merchants = load_merchants()
-    brands = load_brands()
+def dashboard_summary(session: Session = Depends(get_db)) -> dict:
+    merchants = list_merchants(session)
+    brands = list_brands(session)
     assessments = [score_merchant(merchant) for merchant in merchants]
     risk_distribution = Counter(item.risk_level for item in assessments)
     contract_risk_count = sum(merchant.has_contract_risk for merchant in merchants)

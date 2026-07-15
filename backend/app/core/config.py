@@ -10,10 +10,13 @@ class Settings(BaseSettings):
 
     deepseek_api_key: str | None = None
     deepseek_base_url: str = "https://api.deepseek.com"
-    deepseek_model: str = "deepseek-chat"
-    deepseek_reasoner_model: str = "deepseek-reasoner"
+    deepseek_model: str = "deepseek-v4-flash"
+    deepseek_reasoner_model: str = "deepseek-v4-pro"
     deepseek_timeout_seconds: int = 60
 
+    backend_host: str = "127.0.0.1"
+    backend_port: int = 8000
+    frontend_url: str = "http://127.0.0.1:5173"
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")

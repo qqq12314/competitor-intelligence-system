@@ -92,4 +92,6 @@ pnpm dev
 
 ## 当前状态
 
-当前仓库已具备 FastAPI/Vue 工程骨架、品牌与商户样例、七维评分、合同规则审查、Markdown 报告和风控看板。下一阶段重点是 SQLite 数据层、评分权重配置化、DeepSeek 真实调用、自动化测试和报告导出。
+当前仓库已具备 FastAPI/Vue 工程骨架、SQLite + SQLAlchemy 数据层、四类样例数据自动入库、七维评分、合同规则审查、Markdown 报告和风控看板。下一阶段重点是评分权重配置化、DeepSeek 结构化分析、自动化测试和报告导出。
+
+Day 2 数据库说明见 [docs/day2-database.md](docs/day2-database.md)。

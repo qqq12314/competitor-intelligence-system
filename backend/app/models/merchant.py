@@ -17,7 +17,7 @@ class MerchantProfile(BaseModel):
     purchase_cost_ratio: float = Field(ge=0, le=1)
     debt_ratio: float = Field(ge=0, le=1)
     competitor_density: int = Field(ge=0)
-    negative_review_keywords: list[str] = []
+    negative_review_keywords: list[str] = Field(default_factory=list)
     franchise_type: str
     has_contract_risk: bool = False
     recent_public_opinion_risk: bool = False
