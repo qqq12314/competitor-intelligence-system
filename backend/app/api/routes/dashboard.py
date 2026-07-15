@@ -34,4 +34,3 @@ def dashboard_summary() -> dict:
             for item in high_risk_merchants
         ],
     }
-

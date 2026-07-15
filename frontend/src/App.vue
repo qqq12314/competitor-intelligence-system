@@ -5,4 +5,3 @@ import RiskDashboard from './views/RiskDashboard.vue'
 <template>
   <RiskDashboard />
 </template>
-

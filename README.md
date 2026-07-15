@@ -1,88 +1,81 @@
-# 茶饮咖啡小微商户轻量化信贷风控与智能经营分析系统
+# 基于 DeepSeek Skill 与 LangChain 的茶饮咖啡小微商户轻量化信贷风控与智能经营分析系统
 
-本项目基于最新选题报告，将原“茶饮咖啡竞品分析”升级为面向中小金融机构的小微商户信贷风控与经营分析原型系统。系统聚焦茶饮、咖啡、茶咖融合门店，通过品牌信息、门店经营数据、合同条款、财务压力和舆情信号，生成可解释的风险评分、合同风险提示、授信建议和经营分析报告。
+本项目面向中小银行、村镇银行、消费金融公司、担保公司和小额贷款机构，以茶饮咖啡门店为典型小微经营主体，通过品牌信息、门店经营数据、成本压力、合同条款和舆情信号，生成可解释的七维风险评分、合同风险提示、DeepSeek 智能分析、授信辅助建议和贷后关注事项。
 
-当前仓库按“一周完成可演示原型”的节奏组织。第 1 天已完成简单项目框架、样例数据、基础接口骨架、前端看板骨架和项目策划案，后续按日补齐数据库、评分、合同审查、AI 分析、前端联调和答辩材料。
+系统用于课程项目演示和辅助分析，不直接替代征信核验、银行流水审查、现场尽调、人工审批或专业法律意见。
 
-## 项目定位
+## 核心业务流程
 
-- **业务方向**：智慧金融、数据分析、大模型应用、小微企业信贷风控。
-- **服务对象**：中小银行、村镇银行、消费金融公司、担保公司、小额贷款机构。
-- **研究对象**：茶饮咖啡加盟门店、单店咖啡馆、区域连锁饮品店、申请小额经营贷款的个体工商户。
-- **核心能力**：轻量化风险评分、合同风险识别、DeepSeek 智能解释、经营画像、授信建议报告、可视化看板。
+```text
+品牌与商户数据
+  -> 数据清洗和字段标准化
+  -> 七维轻量化风控评分
+  -> 合同风险识别
+  -> DeepSeek 风险解释
+  -> 前端风控看板
+  -> Markdown / Word / PDF 风控报告
+```
 
-## 一周计划
+## 核心功能
 
-完整计划见 [docs/development-plan.md](docs/development-plan.md)。
+- 品牌信息库：品牌品类、价格带、门店规模、加盟成熟度、舆情与风险标签。
+- 商户经营档案：开店时长、客单价、月流水、外卖评分、成本比例、负债比例和竞品密度。
+- 七维风控评分：经营能力、财务压力、品牌稳定性、行业竞争、合同风险、舆情预警、渠道履约。
+- 合同智能审查：识别违约责任、保证金、加盟费用、采购付款、单方解除和争议解决等风险条款。
+- DeepSeek 智能分析：生成经营画像、品牌风险摘要、合同风险解释、授信辅助建议和贷后预警。
+- 风控看板：指标卡、高风险商户、风险等级分布和七维雷达图。
+- 报告生成：生成标准化小微商户信贷风控分析报告。
 
-| 天数 | 目标 | 交付物 |
-| --- | --- | --- |
-| Day 1 | 搭建项目框架，明确技术路线和数据标准 | FastAPI/Vue 目录骨架、样例 CSV、策划案 |
-| Day 2 | 完善数据层和 SQLite 初始化 | 数据库模型、初始化脚本、样例数据入库 |
-| Day 3 | 完成轻量化风控评分 | 七维评分模型、评分接口、测试样例 |
-| Day 4 | 完成合同审查和 DeepSeek Prompt | 合同风险识别、AI 分析模板 |
-| Day 5 | 完成前端可视化看板 | 风险分布、高风险列表、七维雷达图 |
-| Day 6 | 完成报告生成与前后端联调 | Markdown 报告、接口联调、演示样例 |
-| Day 7 | 完成演示和答辩材料 | 操作说明、演示脚本、结项总结 |
+## 技术栈
+
+- 前端：Vue 3、Vite、Element Plus、ECharts、Axios。
+- 后端：FastAPI、Pydantic v2、SQLAlchemy 2。
+- 数据库：开发期 SQLite，后续兼容 MySQL 8。
+- 大模型：DeepSeek API。
+- LLM 工程：LangChain PromptTemplate、Structured Output。
+- 测试：pytest、httpx。
+- 部署：Docker Compose、Nginx。
 
 ## 项目结构
 
 ```text
 backend/
   app/
-    api/routes/          FastAPI 路由
+    api/routes/          品牌、商户、评分、合同、报告、看板接口
     core/                配置与基础能力
-    models/              Pydantic 数据模型
-    services/            风控评分、合同审查、报告生成等业务服务
+    models/              Pydantic 领域模型
+    services/            评分、合同审查、报告生成服务
 data/
-  sample/                品牌、商户、合同和舆情样例数据
-  dictionary/            风控指标字段字典
-docs/                    计划、架构、接口和策划案
+  sample/                品牌、商户、合同、舆情样例数据
+  dictionary/            风控指标字典
+docs/                    计划、架构、API 和项目策划案
 frontend/
-  src/                   Vue 3 看板原型
+  src/                   Vue 3 风控看板
 skills/
-  deepseek_risk_analyst/ DeepSeek 风控分析 Skill Prompt
+  deepseek_risk_analyst/ DeepSeek 风控分析 Skill
 ```
 
-## 技术架构
+## 快速启动
 
-```text
-CSV sample data
-  -> FastAPI + Pydantic
-  -> rule scoring / contract review / report generator
-  -> DeepSeek + LangChain analysis layer
-  -> Vue 3 + Element Plus + ECharts dashboard
-  -> Markdown report
+后端：
+
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+uvicorn app.main:app --reload
 ```
 
-## Day 1 已完成
-
-- 建立后端 FastAPI 基础入口和路由结构。
-- 建立品牌、商户、合同、风控评分的 Pydantic 模型。
-- 建立样例品牌库、商户库、合同库、舆情库和指标字典。
-- 建立规则评分、合同审查、报告生成服务的初版代码。
-- 建立 Vue 3 看板原型目录和基础页面。
-- 建立 DeepSeek 风控分析 Skill Prompt。
-- 完成一周开发计划和项目具体策划案。
-
-Day 1 框架说明见 [docs/day1-framework.md](docs/day1-framework.md)，项目具体策划案见 [docs/project-plan.md](docs/project-plan.md)。
-
-## 后端启动
+如果尚未创建虚拟环境：
 
 ```powershell
 cd backend
 python -m venv .venv
-.venv\Scripts\activate
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-访问：
-
-- API 首页：`http://127.0.0.1:8000`
-- Swagger 文档：`http://127.0.0.1:8000/docs`
-
-## 前端启动
+前端：
 
 ```powershell
 cd frontend
@@ -90,11 +83,13 @@ pnpm install
 pnpm dev
 ```
 
-## 关键文档
+访问地址：
 
-- [一周开发计划](docs/development-plan.md)
-- [Day 1 项目框架说明](docs/day1-framework.md)
-- [项目具体策划案](docs/project-plan.md)
-- [项目具体策划案 PDF](docs/project-plan.pdf)
-- [系统架构说明](docs/architecture.md)
-- [API 草案](docs/api-draft.md)
+- 前端：`http://127.0.0.1:5173`
+- API：`http://127.0.0.1:8000`
+- Swagger：`http://127.0.0.1:8000/docs`
+- 健康检查：`http://127.0.0.1:8000/health`
+
+## 当前状态
+
+当前仓库已具备 FastAPI/Vue 工程骨架、品牌与商户样例、七维评分、合同规则审查、Markdown 报告和风控看板。下一阶段重点是 SQLite 数据层、评分权重配置化、DeepSeek 真实调用、自动化测试和报告导出。

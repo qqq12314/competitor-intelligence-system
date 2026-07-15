@@ -7,7 +7,7 @@ from app.core.config import settings
 app = FastAPI(
     title=settings.app_name,
     description="Tea and coffee micro-merchant credit risk and business intelligence API.",
-    version="0.2.0",
+    version="0.3.0",
 )
 
 app.add_middleware(
@@ -31,6 +31,11 @@ def read_root() -> dict[str, str]:
     return {
         "name": settings.app_name,
         "positioning": "茶饮咖啡小微商户轻量化信贷风控与智能经营分析",
+        "llm": settings.deepseek_model,
         "docs": "/docs",
     }
 
+
+@app.get("/health")
+def health_check() -> dict[str, str]:
+    return {"status": "ok", "environment": settings.app_env}

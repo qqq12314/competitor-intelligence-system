@@ -15,3 +15,17 @@ export async function fetchRiskAssessments() {
   return data
 }
 
+export async function fetchBrands() {
+  const { data } = await api.get('/brands')
+  return data
+}
+
+export async function fetchMerchants() {
+  const { data } = await api.get('/merchants')
+  return data
+}
+
+export async function reviewContract(payload) {
+  const { data } = await api.post('/contracts/review', payload)
+  return data
+}
