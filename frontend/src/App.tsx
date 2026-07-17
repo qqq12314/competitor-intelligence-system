@@ -1,277 +1,343 @@
 import {
-  Award,
+  Activity,
+  ArrowUpRight,
   BadgeCheck,
   Bean,
+  ChartNoAxesCombined,
+  ChevronRight,
   Coffee,
-  CupSoda,
-  LineChart,
+  FileSearch,
+  Gauge,
   Mountain,
-  ShoppingBag,
+  ShieldCheck,
   Sparkles,
   Store,
-  TrendingUp,
-  UsersRound,
+  Waves,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-const fadeIn = {
-  initial: { opacity: 0, y: 28 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, amount: 0.26 },
-  transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+const fadeUp = {
+  initial: false,
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.72, ease: [0.22, 1, 0.36, 1] },
 }
 
-const metrics = [
-  { label: '销售额', value: '¥ 482.6K', change: '+12.4%', icon: LineChart },
-  { label: '订单量', value: '18,642', change: '+8.7%', icon: ShoppingBag },
-  { label: '会员增长', value: '3,816', change: '+16.1%', icon: UsersRound },
-  { label: '门店数据', value: '126', change: '稳定', icon: Store },
+const navItems = ['首页', '风控看板', '合同审查', '智能报告', '项目说明']
+
+const sampleCards = [
+  {
+    name: 'Espresso',
+    scene: '高周转咖啡快取店',
+    sales: '¥48.6K',
+    repurchase: '62%',
+    flavor: '91.8',
+    risk: '低风险',
+    score: 'A',
+    accent: 'from-[#FFF8EC] to-[#FFFFFF]',
+  },
+  {
+    name: 'Oat Latte',
+    scene: '社区型燕麦拿铁店',
+    sales: '¥32.4K',
+    repurchase: '57%',
+    flavor: '88.6',
+    risk: '稳健',
+    score: 'A-',
+    accent: 'from-[#F7FBFF] to-[#FFFFFF]',
+  },
+  {
+    name: 'Brown Sugar Milk Tea',
+    scene: '商圈黑糖奶茶店',
+    sales: '¥76.2K',
+    repurchase: '49%',
+    flavor: '84.3',
+    risk: '需复核',
+    score: 'B+',
+    accent: 'from-[#FFF6F1] to-[#FFFFFF]',
+  },
 ]
 
-const flavorCards = [
-  { title: 'Espresso', metric: '91.8', label: '风味评分', tone: '浓缩咖啡' },
-  { title: 'Oat Latte', metric: '68%', label: '复购率', tone: '燕麦奶' },
-  { title: 'Brown Sugar Milk Tea', metric: '12.4K', label: '周销量', tone: '黑糖奶茶' },
-]
-
-function AmbientDecor() {
+function EdgeDecor() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      <div className="absolute -left-32 top-28 h-72 w-72 rounded-full border border-espresso/10" />
-      <div className="absolute -left-20 top-40 h-44 w-44 rounded-full border border-ocean/10" />
-      <div className="absolute right-[-7rem] top-20 h-80 w-80 rounded-full border-[18px] border-champagne/10" />
-      <Bean className="absolute right-20 top-[42%] h-28 w-28 rotate-12 text-espresso/[0.07]" strokeWidth={1.2} />
-      <Coffee className="absolute left-12 bottom-44 h-32 w-32 -rotate-12 text-espresso/[0.06]" strokeWidth={1.2} />
-      <CupSoda className="absolute right-16 bottom-28 h-36 w-36 text-ocean/[0.06]" strokeWidth={1.2} />
-      <svg className="absolute left-[48%] top-8 h-48 w-96 text-ocean/[0.07]" viewBox="0 0 420 160" fill="none">
-        <path d="M14 104C78 24 131 141 205 70C265 13 314 44 397 22" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
-        <path d="M22 132C109 74 155 154 232 104C298 61 337 84 398 69" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+      <div className="absolute -left-28 top-28 h-80 w-80 rounded-full border border-espresso/[0.06]" />
+      <div className="absolute -left-14 top-44 h-44 w-44 rounded-full border-[10px] border-ocean/[0.04]" />
+      <div className="absolute -right-32 top-20 h-96 w-96 rounded-full border-[18px] border-champagne/[0.08]" />
+      <div className="absolute -right-20 bottom-10 h-64 w-64 rounded-full border border-espresso/[0.05]" />
+      <Bean className="absolute left-8 bottom-24 h-28 w-28 -rotate-12 text-espresso/[0.055]" strokeWidth={1.2} />
+      <Coffee className="absolute right-14 top-[45%] h-36 w-36 rotate-6 text-espresso/[0.045]" strokeWidth={1.1} />
+      <Waves className="absolute left-[7%] top-[62%] h-36 w-36 text-ocean/[0.045]" strokeWidth={1.2} />
+      <svg className="absolute right-[8%] bottom-20 h-40 w-80 text-ocean/[0.05]" viewBox="0 0 420 180" fill="none">
+        <path d="M18 116C82 36 132 148 207 76C268 18 318 48 398 24" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
+        <path d="M28 148C111 88 158 162 236 112C300 70 342 90 400 78" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
       </svg>
     </div>
   )
 }
 
-function TopHeader() {
+function Navigation() {
   return (
-    <motion.header
-      {...fadeIn}
-      className="relative z-10 mb-14 flex flex-col gap-7 md:flex-row md:items-center md:justify-between"
+    <motion.nav
+      {...fadeUp}
+      className="relative z-20 w-full overflow-hidden rounded-[20px] bg-ink px-5 py-4 text-white shadow-soft md:px-7"
     >
-      <div className="flex flex-wrap items-center gap-4">
-        <span className="rounded-md bg-espresso px-4 py-2 text-sm font-semibold tracking-[0.16em] text-white shadow-sm md:bg-ocean">
-          设计案例
-        </span>
-        <span className="font-script text-2xl text-espresso md:text-3xl">
-          都是真案例，合作真省心
-        </span>
-      </div>
-      <div className="text-left md:text-right">
-        <span className="mr-2 text-2xl font-black tracking-tight text-ink md:text-3xl">
-          Supreme
-        </span>
-        <span className="text-xl font-semibold text-ink/80">至上</span>
-      </div>
-    </motion.header>
-  )
-}
-
-function FirstCase() {
-  return (
-    <motion.section
-      {...fadeIn}
-      className="group relative mb-16 overflow-hidden rounded-[20px] bg-cream p-5 shadow-soft ring-1 ring-line/80 md:p-8"
-    >
-      <div className="absolute right-10 top-8 flex gap-5 text-espresso/15">
-        <Coffee className="h-10 w-10" strokeWidth={1.3} />
-        <Bean className="h-10 w-10" strokeWidth={1.3} />
-        <CupSoda className="h-10 w-10" strokeWidth={1.3} />
-        <Award className="h-10 w-10" strokeWidth={1.3} />
-      </div>
-
-      <motion.div
-        whileHover={{ y: -6, scale: 1.006 }}
-        transition={{ duration: 0.32, ease: 'easeOut' }}
-        className="relative overflow-hidden rounded-[20px] bg-white shadow-cafe ring-1 ring-line"
-      >
-        <div className="grid min-h-[620px] grid-cols-1 lg:grid-cols-[250px_1fr]">
-          <aside className="border-b border-line bg-[#F8FAFD] p-7 lg:border-b-0 lg:border-r">
-            <div className="mb-12 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-md bg-ink" />
-              <div>
-                <p className="text-sm font-bold text-ink">Credit Studio</p>
-                <p className="text-xs text-copy">Merchant Risk OS</p>
-              </div>
-            </div>
-            {['Portfolio', 'Orders', 'Members', 'Stores', 'Reports'].map((item, index) => (
-              <div
-                key={item}
-                className={`mb-3 rounded-lg px-4 py-3 text-sm ${
-                  index === 0 ? 'bg-ocean text-white' : 'text-copy'
-                }`}
-              >
-                {item}
-              </div>
-            ))}
-          </aside>
-
-          <div className="relative p-7 md:p-10">
-            <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-              <div>
-                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-ocean">
-                  Enterprise Data Dashboard
-                </p>
-                <h2 className="max-w-2xl text-3xl font-black tracking-tight text-ink md:text-5xl">
-                  经营数据与授信初审合并呈现
-                </h2>
-              </div>
-              <div className="rounded-xl border border-line bg-[#FAFCFF] px-5 py-4 text-right">
-                <p className="text-sm text-copy">质量指数</p>
-                <p className="text-3xl font-black text-champagne">A+</p>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {metrics.map(({ label, value, change, icon: Icon }) => (
-                <div key={label} className="rounded-2xl border border-line bg-white p-5">
-                  <Icon className="mb-5 h-6 w-6 text-ocean" strokeWidth={1.8} />
-                  <p className="text-sm text-copy">{label}</p>
-                  <p className="mt-2 text-2xl font-black text-ink">{value}</p>
-                  <p className="mt-2 text-sm font-semibold text-champagne">{change}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
-              <div className="rounded-2xl border border-line bg-[#F8FBFF] p-6">
-                <div className="mb-5 flex items-center justify-between">
-                  <p className="font-bold text-ink">门店经营曲线</p>
-                  <span className="text-sm text-copy">Last 12 weeks</span>
-                </div>
-                <div className="flex h-52 items-end gap-3">
-                  {[34, 48, 42, 63, 58, 72, 66, 81, 76, 88, 92, 86].map((height, index) => (
-                    <div key={index} className="flex flex-1 items-end">
-                      <div
-                        className="w-full rounded-t-md bg-gradient-to-t from-ocean to-[#9DC4F4]"
-                        style={{ height: `${height}%` }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="rounded-2xl border border-line bg-[#FFFCF6] p-6">
-                <BadgeCheck className="mb-4 h-8 w-8 text-champagne" strokeWidth={1.8} />
-                <p className="text-sm text-copy">品质徽章</p>
-                <p className="mt-3 text-2xl font-black text-ink">稳健经营样本</p>
-                <p className="mt-4 text-sm leading-7 text-copy">
-                  用销售额、订单量、会员增长和门店数据形成授信前的经营画像。
-                </p>
-              </div>
-            </div>
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-champagne/55 to-transparent" />
+      <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full border border-champagne/45 bg-white/8">
+            <ShieldCheck className="h-5 w-5 text-champagne" strokeWidth={1.8} />
           </div>
-        </div>
-      </motion.div>
-
-      <h3 className="pointer-events-none absolute bottom-4 left-5 text-[3.4rem] font-black leading-none tracking-[-0.06em] text-ink md:bottom-8 md:left-10 md:text-[6.8rem]">
-        客户给我们的
-      </h3>
-    </motion.section>
-  )
-}
-
-function MountainHero() {
-  return (
-    <div className="relative h-[300px] overflow-hidden rounded-b-[20px] bg-[#DCE8F3]">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#D9E7F4] via-[#C7D8E8] to-[#EFF5FA]" />
-      <svg className="absolute inset-x-0 bottom-0 h-full w-full" viewBox="0 0 1000 330" preserveAspectRatio="none">
-        <path d="M0 270L170 145L300 235L470 104L645 242L785 132L1000 260V330H0Z" fill="#BFD0E1" />
-        <path d="M0 292L210 192L360 262L528 152L700 276L852 190L1000 278V330H0Z" fill="#D8E2EC" />
-        <path d="M0 310L180 250L365 292L540 236L720 302L910 245L1000 298V330H0Z" fill="#EEF4FA" />
-      </svg>
-      <svg className="absolute right-16 top-12 h-36 w-72 text-white/45" viewBox="0 0 300 140" fill="none">
-        <path d="M20 82C58 30 96 125 138 76C181 26 218 91 275 38" stroke="currentColor" strokeWidth="9" strokeLinecap="round" />
-        <path d="M30 111C79 68 113 128 165 95C211 66 240 87 280 70" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
-      </svg>
-      <div className="absolute left-8 top-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-white/85">DAILY FLAVOR INDEX</p>
-        <p className="mt-4 text-6xl font-black tracking-[-0.07em] text-white">37.62 <span className="text-4xl text-champagne">↑</span></p>
-      </div>
-    </div>
-  )
-}
-
-function SecondCase() {
-  return (
-    <motion.section
-      {...fadeIn}
-      className="group relative overflow-hidden rounded-[20px] bg-[#F3ECE2] p-5 shadow-soft ring-1 ring-line/80 md:p-8"
-    >
-      <motion.div
-        whileHover={{ y: -6, scale: 1.006 }}
-        transition={{ duration: 0.32, ease: 'easeOut' }}
-        className="relative overflow-hidden rounded-[20px] bg-white shadow-cafe ring-1 ring-line"
-      >
-        <div className="flex items-center justify-between bg-ink px-6 py-5 text-white md:px-8">
-          <div className="flex items-center gap-3">
-            <Mountain className="h-6 w-6 text-champagne" strokeWidth={1.7} />
-            <span className="font-bold tracking-tight">Flavor Risk Atlas</span>
-          </div>
-          <div className="hidden gap-8 text-sm text-white/62 md:flex">
-            <span>Index</span>
-            <span>Stores</span>
-            <span>Contracts</span>
-            <span>Signals</span>
+          <div>
+            <p className="text-[11px] font-medium tracking-[0.2em] text-white/46">咕咕嘎嘎歪比巴卟小组</p>
+            <p className="text-sm font-semibold tracking-wide text-white">Tea Coffee Credit Risk</p>
           </div>
         </div>
 
-        <MountainHero />
-
-        <div className="relative z-10 -mt-12 grid gap-5 px-6 pb-10 md:grid-cols-3 md:px-10">
-          {flavorCards.map((card) => (
-            <div key={card.title} className="rounded-[20px] border border-line bg-cream p-6 shadow-cafe">
-              <p className="mb-8 text-sm text-copy">{card.tone}</p>
-              <h4 className="text-xl font-black text-espresso">{card.title}</h4>
-              <div className="mt-5 flex items-end justify-between">
-                <div>
-                  <p className="text-4xl font-black tracking-[-0.04em] text-ink">{card.metric}</p>
-                  <p className="mt-1 text-sm text-copy">{card.label}</p>
-                </div>
-                <Sparkles className="h-6 w-6 text-champagne" strokeWidth={1.8} />
-              </div>
-            </div>
+        <div className="grid w-full min-w-0 grid-cols-3 gap-x-3 gap-y-3 text-xs text-white/68 sm:flex sm:flex-wrap sm:items-center sm:text-sm md:gap-x-6 lg:w-auto">
+          {navItems.map((item, index) => (
+            <a key={item} className="group flex items-center gap-2 transition hover:text-white" href="#">
+              {index === 0 && <span className="h-1.5 w-1.5 rounded-full bg-champagne" />}
+              <span>{item}</span>
+            </a>
           ))}
         </div>
-      </motion.div>
 
-      <h3 className="pointer-events-none absolute bottom-4 left-5 text-[3.3rem] font-black leading-none tracking-[-0.06em] text-espresso md:bottom-8 md:left-10 md:text-[6.4rem]">
-        我们给客户的
-      </h3>
+        <div className="flex max-w-full items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/58 md:text-xs md:tracking-[0.22em]">
+          <span className="h-px w-6 bg-champagne/55 md:w-8" />
+          Micro Credit Risk Platform
+        </div>
+      </div>
+    </motion.nav>
+  )
+}
+
+function MountainVisual() {
+  return (
+    <motion.div
+      initial={false}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.9, delay: 0.16, ease: [0.22, 1, 0.36, 1] }}
+      className="group relative min-h-[430px] w-full min-w-0 overflow-hidden rounded-[20px] bg-[#D8E4F0] shadow-soft ring-1 ring-white/70 md:min-h-[520px]"
+    >
+      <div className="absolute inset-0 bg-gradient-to-b from-[#DDEAF5] via-[#C7D7E7] to-[#EEF4FA]" />
+      <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/42 to-transparent" />
+
+      <svg className="absolute inset-x-0 bottom-0 h-[82%] w-full transition duration-700 group-hover:scale-[1.015]" viewBox="0 0 1100 620" preserveAspectRatio="none">
+        <path d="M0 468L126 342L208 402L314 280L432 420L552 218L696 436L796 304L930 430L1100 286V620H0Z" fill="#AFC3D8" />
+        <path d="M0 510L158 388L276 478L398 344L534 492L650 326L804 510L934 404L1100 474V620H0Z" fill="#CAD8E7" />
+        <path d="M0 564L180 500L322 548L482 470L642 558L822 492L1100 548V620H0Z" fill="#EEF4FA" />
+        <path d="M548 220L588 282L554 262L520 306L490 286Z" fill="#F8FBFF" opacity="0.82" />
+        <path d="M794 306L824 352L798 338L766 376L742 356Z" fill="#F8FBFF" opacity="0.74" />
+      </svg>
+
+      <svg className="absolute right-7 top-20 h-40 w-80 text-white/36 md:right-16 md:top-24" viewBox="0 0 340 150" fill="none">
+        <path d="M20 90C64 32 104 128 152 78C198 30 238 92 318 40" stroke="currentColor" strokeWidth="9" strokeLinecap="round" />
+        <path d="M34 120C84 78 126 132 178 98C226 68 264 88 316 72" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
+      </svg>
+
+      <div className="absolute right-6 top-6 rounded-2xl border border-white/55 bg-white/54 p-4 text-right shadow-cafe backdrop-blur md:right-9 md:top-9">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-copy">Contract Risk</p>
+        <p className="mt-2 text-3xl font-black tracking-tight text-ink">
+          36.87 <span className="text-lg text-champagne">↓</span>
+        </p>
+        <p className="mt-1 text-xs text-copy">合同风险指数</p>
+      </div>
+
+      <div className="absolute left-6 top-7 max-w-[230px] md:left-10 md:top-10">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/55 bg-white/42 px-3 py-1 text-xs font-semibold text-ink/72 backdrop-blur">
+          <Mountain className="h-3.5 w-3.5 text-champagne" />
+          Snow Signal View
+        </div>
+        <p className="text-sm leading-7 text-ink/60">
+          低饱和灰蓝雪山用于表达稳定、长期和审慎；极淡奶泡曲线保留茶饮咖啡行业识别。
+        </p>
+      </div>
+    </motion.div>
+  )
+}
+
+function RiskIndexPanel() {
+  return (
+    <motion.div
+      {...fadeUp}
+      transition={{ duration: 0.78, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+      className="relative min-h-[430px] w-full min-w-0 rounded-[20px] bg-white px-7 py-8 shadow-soft ring-1 ring-line/85 md:min-h-[520px] md:px-10 md:py-10"
+    >
+      <div className="absolute right-7 top-7 flex items-center gap-2 rounded-full border border-line bg-[#F8FBFF] px-3 py-1.5 text-xs font-semibold text-copy">
+        <span className="h-2 w-2 rounded-full bg-champagne" />
+        UPDATE
+      </div>
+
+      <div className="flex h-full flex-col justify-between">
+        <div>
+          <p className="mb-5 text-xs font-black uppercase tracking-[0.32em] text-ocean">Micro Credit Risk Index</p>
+          <h1 className="max-w-xl text-[2.08rem] font-black leading-[1.08] tracking-[-0.01em] text-ink md:text-6xl md:tracking-[-0.035em]">
+            <span className="block md:inline">茶饮咖啡小微商户</span>
+            <span className="block md:inline">智能风控平台</span>
+          </h1>
+          <p className="mt-6 max-w-lg text-base leading-8 text-copy [word-break:break-all] md:text-lg md:[word-break:normal]">
+            将经营流水、门店活跃度、合同文本与商户画像转化为可解释的授信前风险指数，辅助完成轻量化信贷风控与经营分析。
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-end">
+          <div>
+            <p className="text-sm font-semibold text-copy">今日组合风险指数</p>
+            <div className="mt-3 flex items-end gap-3">
+              <span className="text-7xl font-black leading-none tracking-[-0.07em] text-champagne md:text-8xl">
+                37.62
+              </span>
+              <span className="mb-3 flex items-center gap-1 text-2xl font-black text-champagne">
+                <ArrowUpRight className="h-6 w-6" strokeWidth={2.3} />
+              </span>
+            </div>
+            <p className="mt-4 text-xs font-bold uppercase tracking-[0.28em] text-copy">
+              UPDATE&nbsp;&nbsp;2026 / 07 / 17
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-line bg-[#F8FBFF] p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm font-bold text-ink">
+                <Gauge className="h-5 w-5 text-champagne" />
+                风控解释
+              </div>
+              <span className="text-xs text-copy">
+                <span className="sm:hidden">中低</span>
+                <span className="hidden sm:inline">Low-Moderate</span>
+              </span>
+            </div>
+            <div className="space-y-3 text-sm text-copy">
+              <div className="flex items-center justify-between">
+                <span>现金流稳定性</span>
+                <span className="font-bold text-ink">82%</span>
+              </div>
+              <div className="h-2 rounded-full bg-line">
+                <div className="h-2 w-[82%] rounded-full bg-ocean" />
+              </div>
+              <div className="flex items-center justify-between">
+                <span>合同异常命中</span>
+                <span className="font-bold text-champagne">3 项</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>经营增长信号</span>
+                <span className="font-bold text-ink">正向</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function SampleCard({
+  card,
+  index,
+}: {
+  card: (typeof sampleCards)[number]
+  index: number
+}) {
+  return (
+    <motion.article
+      initial={false}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.62, delay: 0.22 + index * 0.08, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ y: -8, scale: 1.01 }}
+      className={`relative w-full min-w-0 overflow-hidden rounded-[20px] border border-white/80 bg-gradient-to-br ${card.accent} p-6 shadow-cafe ring-1 ring-line/80`}
+    >
+      <div className="absolute right-5 top-5 text-champagne">
+        <Sparkles className="h-5 w-5" strokeWidth={1.8} />
+      </div>
+      <p className="text-xs font-bold uppercase tracking-[0.24em] text-copy">{card.name}</p>
+      <h3 className="mt-3 text-xl font-black tracking-tight text-ink">{card.scene}</h3>
+      <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <p className="text-copy">月销售额</p>
+          <p className="mt-1 text-xl font-black text-ink">{card.sales}</p>
+        </div>
+        <div>
+          <p className="text-copy">复购率</p>
+          <p className="mt-1 text-xl font-black text-ink">{card.repurchase}</p>
+        </div>
+        <div>
+          <p className="text-copy">风味评分</p>
+          <p className="mt-1 text-xl font-black text-ink">{card.flavor}</p>
+        </div>
+        <div>
+          <p className="text-copy">风险评级</p>
+          <p className="mt-1 text-xl font-black text-champagne">{card.score}</p>
+        </div>
+      </div>
+      <div className="mt-6 flex items-center justify-between rounded-2xl border border-line/80 bg-white/68 px-4 py-3">
+        <span className="text-sm font-semibold text-copy">{card.risk}</span>
+        <ChevronRight className="h-4 w-4 text-champagne" strokeWidth={2} />
+      </div>
+    </motion.article>
+  )
+}
+
+function SampleCards() {
+  return (
+    <section className="relative z-10 -mt-12 grid w-full min-w-0 grid-cols-1 gap-5 px-4 md:grid-cols-3 md:px-8 lg:px-12">
+      {sampleCards.map((card, index) => (
+        <SampleCard key={card.name} card={card} index={index} />
+      ))}
+    </section>
+  )
+}
+
+function InsightStrip() {
+  const items = [
+    { icon: Activity, label: '经营波动监测', value: '12 signals' },
+    { icon: FileSearch, label: '合同风险识别', value: 'NLP review' },
+    { icon: ChartNoAxesCombined, label: '智能报告生成', value: 'Explainable' },
+    { icon: Store, label: '门店画像归因', value: 'Merchant graph' },
+  ]
+
+  return (
+    <motion.section
+      initial={false}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.72, delay: 0.36, ease: [0.22, 1, 0.36, 1] }}
+      className="mt-10 grid w-full min-w-0 grid-cols-1 gap-4 rounded-[20px] border border-line/80 bg-white/70 p-4 shadow-sm backdrop-blur md:grid-cols-4"
+    >
+      {items.map(({ icon: Icon, label, value }) => (
+        <div key={label} className="flex items-center gap-3 rounded-2xl px-3 py-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ink text-champagne">
+            <Icon className="h-5 w-5" strokeWidth={1.8} />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-ink">{label}</p>
+            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-copy">{value}</p>
+          </div>
+        </div>
+      ))}
     </motion.section>
   )
 }
 
 export default function App() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-glacier via-mist to-[#F7EFE7] px-5 py-10 text-ink md:px-10 md:py-16">
-      <AmbientDecor />
-      <section className="relative mx-auto max-w-[1400px]">
-        <TopHeader />
-        <div className="mb-12 max-w-4xl">
-          <motion.p
-            {...fadeIn}
-            className="text-balance text-3xl font-black leading-tight tracking-[-0.045em] text-ink md:text-6xl"
-          >
-            为茶饮咖啡小微商户打造可信赖的数字风控案例展示。
-          </motion.p>
-          <motion.p
-            {...fadeIn}
-            transition={{ delay: 0.12, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-6 max-w-3xl text-lg leading-9 text-copy"
-          >
-            以高端企业案例展示为主，轻量融入精品咖啡与现代奶茶气质，用克制的排版和数据样机呈现风控系统的专业感。
-          </motion.p>
+    <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-glacier via-[#F7FAFD] to-[#E8F0F8] px-4 py-5 text-ink md:px-8 md:py-8">
+      <EdgeDecor />
+      <section className="relative mx-auto w-full max-w-[1400px]">
+        <Navigation />
+
+        <div className="mt-8 w-full min-w-0 overflow-visible rounded-[24px] bg-white/24 p-0 md:mt-10">
+          <div className="grid w-full min-w-0 grid-cols-1 gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+            <RiskIndexPanel />
+            <MountainVisual />
+          </div>
+          <SampleCards />
         </div>
-        <FirstCase />
-        <SecondCase />
+
+        <InsightStrip />
+
+        <div className="mt-9 flex flex-col gap-3 pb-8 text-xs text-copy md:flex-row md:items-center md:justify-between">
+          <p>Tea & Coffee Micro Credit Risk Platform · DeepSeek Skill + LangChain 风控原型</p>
+          <p className="font-semibold uppercase tracking-[0.22em] text-ink/55">Trusted · Explainable · Lightweight</p>
+        </div>
       </section>
     </main>
   )
