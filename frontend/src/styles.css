@@ -12,6 +12,7 @@ body {
   margin: 0;
   min-width: 320px;
   overflow-x: hidden;
+  font-family: Inter, PingFang SC, Noto Sans SC, Microsoft YaHei, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }

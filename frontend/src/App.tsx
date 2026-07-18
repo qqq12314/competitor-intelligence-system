@@ -1,67 +1,213 @@
+import { useEffect, useMemo, useState } from 'react'
 import {
   Activity,
   ArrowUpRight,
   BadgeCheck,
   Bean,
-  ChartNoAxesCombined,
   ChevronRight,
   Coffee,
   FileSearch,
   Gauge,
   Mountain,
+  RefreshCw,
   ShieldCheck,
   Sparkles,
   Store,
   Waves,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import {
+  fetchBrands,
+  fetchDashboardSummary,
+  fetchMerchantReport,
+  fetchMerchants,
+  fetchRiskAssessments,
+  type BrandProfile,
+  type DashboardSummary,
+  type MerchantProfile,
+  type RiskAssessment,
+} from './api/client'
+import {
+  MOCK_ASSESSMENTS,
+  MOCK_BRANDS,
+  MOCK_MERCHANTS,
+  MOCK_REPORTS,
+  MOCK_SUMMARY,
+} from './mockData'
 
-const fadeUp = {
-  initial: false,
+const navItems = ['首页', '风控看板', '合同审查', '智能报告', '数据接入']
+
+const riskOrder = ['高风险', '中风险', '中低风险', '低风险']
+
+const fadeIn = {
+  initial: { opacity: 0, y: 16 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.72, ease: [0.22, 1, 0.36, 1] },
+  transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
 }
 
-const navItems = ['首页', '风控看板', '合同审查', '智能报告', '项目说明']
+type LoadState = 'loading' | 'ready' | 'error'
+type DataSource = 'api' | 'mock'
 
-const sampleCards = [
-  {
-    name: 'Espresso',
-    scene: '高周转咖啡快取店',
-    sales: '¥48.6K',
-    repurchase: '62%',
-    flavor: '91.8',
-    risk: '低风险',
-    score: 'A',
-    accent: 'from-[#FFF8EC] to-[#FFFFFF]',
-  },
-  {
-    name: 'Oat Latte',
-    scene: '社区型燕麦拿铁店',
-    sales: '¥32.4K',
-    repurchase: '57%',
-    flavor: '88.6',
-    risk: '稳健',
-    score: 'A-',
-    accent: 'from-[#F7FBFF] to-[#FFFFFF]',
-  },
-  {
-    name: 'Brown Sugar Milk Tea',
-    scene: '商圈黑糖奶茶店',
-    sales: '¥76.2K',
-    repurchase: '49%',
-    flavor: '84.3',
-    risk: '需复核',
-    score: 'B+',
-    accent: 'from-[#FFF6F1] to-[#FFFFFF]',
-  },
-]
+function formatWan(value: number) {
+  if (!Number.isFinite(value)) return '0.0万'
+  return `${(value / 10000).toFixed(1)}万`
+}
+
+function formatRatio(value: number) {
+  if (!Number.isFinite(value)) return '0%'
+  return `${Math.round(value * 100)}%`
+}
+
+function formatScore(value: number) {
+  if (!Number.isFinite(value)) return '0.00'
+  return value.toFixed(2)
+}
+
+function riskTone(level: string) {
+  if (level.includes('高')) return 'bg-rose-50 text-rose-700 ring-rose-200'
+  if (level.includes('中')) return 'bg-amber-50 text-amber-700 ring-amber-200'
+  return 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+}
+
+function useDashboardData() {
+  const [state, setState] = useState<LoadState>('loading')
+  const [dataSource, setDataSource] = useState<DataSource>('api')
+  const [error, setError] = useState<string | null>(null)
+  const [summary, setSummary] = useState<DashboardSummary | null>(null)
+  const [assessments, setAssessments] = useState<RiskAssessment[]>([])
+  const [merchants, setMerchants] = useState<MerchantProfile[]>([])
+  const [brands, setBrands] = useState<BrandProfile[]>([])
+  const [activeMerchantId, setActiveMerchantId] = useState<string>('')
+  const [reportMarkdown, setReportMarkdown] = useState<string>('')
+  const [reportState, setReportState] = useState<LoadState>('loading')
+
+  const load = async () => {
+    try {
+      setDataSource('api')
+      setState('loading')
+      setError(null)
+
+      const [summaryResult, assessmentResult, merchantResult, brandResult] = await Promise.all([
+        fetchDashboardSummary(),
+        fetchRiskAssessments(),
+        fetchMerchants(),
+        fetchBrands(),
+      ])
+
+      setSummary(summaryResult)
+      setAssessments(assessmentResult)
+      setMerchants(merchantResult)
+      setBrands(brandResult)
+
+      const firstActiveId =
+        summaryResult.high_risk_merchants[0]?.merchant_id || assessmentResult[0]?.merchant_id || merchantResult[0]?.merchant_id || ''
+      setActiveMerchantId((current) => current || firstActiveId)
+      setState('ready')
+    } catch (err) {
+      setDataSource('mock')
+      setSummary(MOCK_SUMMARY)
+      setAssessments(MOCK_ASSESSMENTS)
+      setMerchants(MOCK_MERCHANTS)
+      setBrands(MOCK_BRANDS)
+      setActiveMerchantId(MOCK_SUMMARY.high_risk_merchants[0]?.merchant_id || MOCK_MERCHANTS[0]?.merchant_id || '')
+      setReportMarkdown(MOCK_REPORTS[MOCK_SUMMARY.high_risk_merchants[0]?.merchant_id || MOCK_MERCHANTS[0]?.merchant_id || ''] || '')
+      setReportState('ready')
+      setState('ready')
+      const message = err instanceof Error ? err.message : '数据加载失败，已切换为本地样例'
+      setError(`${message}。当前页面使用本地样例数据。`)
+    }
+  }
+
+  useEffect(() => {
+    void load()
+  }, [])
+
+  useEffect(() => {
+    if (!activeMerchantId) return
+
+    let cancelled = false
+    setReportState('loading')
+    setReportMarkdown('')
+
+    if (dataSource === 'mock') {
+      setReportMarkdown(MOCK_REPORTS[activeMerchantId] || '当前商户暂无本地样例报告。')
+      setReportState('ready')
+      return () => {
+        cancelled = true
+      }
+    }
+
+    fetchMerchantReport(activeMerchantId)
+      .then((content) => {
+        if (!cancelled) {
+          setReportMarkdown(content)
+          setReportState('ready')
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setReportMarkdown('报告加载失败，请确认后端服务已启动。')
+          setReportState('error')
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeMerchantId, dataSource])
+
+  const activeMerchant = useMemo(
+    () => merchants.find((item) => item.merchant_id === activeMerchantId) || null,
+    [activeMerchantId, merchants],
+  )
+
+  const activeAssessment = useMemo(
+    () => assessments.find((item) => item.merchant_id === activeMerchantId) || null,
+    [activeMerchantId, assessments],
+  )
+
+  const activeBrand = useMemo(
+    () => brands.find((item) => item.brand_name === activeMerchant?.brand_name) || null,
+    [activeMerchant, brands],
+  )
+
+  const riskEntries = useMemo(() => {
+    const entries = Object.entries(summary?.risk_distribution || {})
+    return entries.sort(([left], [right]) => {
+      const leftRank = riskOrder.findIndex((item) => left.includes(item))
+      const rightRank = riskOrder.findIndex((item) => right.includes(item))
+      return (leftRank === -1 ? 99 : leftRank) - (rightRank === -1 ? 99 : rightRank)
+    })
+  }, [summary])
+
+  const totalRiskCount = riskEntries.reduce((total, [, value]) => total + value, 0)
+
+    return {
+      state,
+      dataSource,
+      error,
+      summary,
+    assessments,
+    merchants,
+    brands,
+    activeMerchantId,
+    setActiveMerchantId,
+    reportMarkdown,
+    reportState,
+    activeMerchant,
+    activeAssessment,
+    activeBrand,
+    riskEntries,
+      totalRiskCount,
+      reload: load,
+    }
+  }
 
 function EdgeDecor() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
       <div className="absolute -left-28 top-28 h-80 w-80 rounded-full border border-espresso/[0.06]" />
-      <div className="absolute -left-14 top-44 h-44 w-44 rounded-full border-[10px] border-ocean/[0.04]" />
+      <div className="absolute -left-10 top-48 h-44 w-44 rounded-full border-[10px] border-ocean/[0.04]" />
       <div className="absolute -right-32 top-20 h-96 w-96 rounded-full border-[18px] border-champagne/[0.08]" />
       <div className="absolute -right-20 bottom-10 h-64 w-64 rounded-full border border-espresso/[0.05]" />
       <Bean className="absolute left-8 bottom-24 h-28 w-28 -rotate-12 text-espresso/[0.055]" strokeWidth={1.2} />
@@ -78,7 +224,7 @@ function EdgeDecor() {
 function Navigation() {
   return (
     <motion.nav
-      {...fadeUp}
+      {...fadeIn}
       className="relative z-20 w-full overflow-hidden rounded-[20px] bg-ink px-5 py-4 text-white shadow-soft md:px-7"
     >
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-champagne/55 to-transparent" />
@@ -111,7 +257,9 @@ function Navigation() {
   )
 }
 
-function MountainVisual() {
+function MountainVisual({ summary, activeMerchant }: { summary: DashboardSummary | null; activeMerchant: MerchantProfile | null }) {
+  const headlineScore = summary?.high_risk_merchants[0]?.score ?? 0
+
   return (
     <motion.div
       initial={false}
@@ -138,206 +286,600 @@ function MountainVisual() {
       <div className="absolute right-6 top-6 rounded-2xl border border-white/55 bg-white/54 p-4 text-right shadow-cafe backdrop-blur md:right-9 md:top-9">
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-copy">Contract Risk</p>
         <p className="mt-2 text-3xl font-black tracking-tight text-ink">
-          36.87 <span className="text-lg text-champagne">↓</span>
+          {formatScore(headlineScore)} <span className="text-lg text-champagne">↑</span>
         </p>
-        <p className="mt-1 text-xs text-copy">合同风险指数</p>
+        <p className="mt-1 text-xs text-copy">{activeMerchant ? `${activeMerchant.brand_name} · 重点商户` : '等待商户数据'}</p>
       </div>
 
-      <div className="absolute left-6 top-7 max-w-[230px] md:left-10 md:top-10">
+      <div className="absolute left-6 top-7 max-w-[260px] md:left-10 md:top-10">
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/55 bg-white/42 px-3 py-1 text-xs font-semibold text-ink/72 backdrop-blur">
           <Mountain className="h-3.5 w-3.5 text-champagne" />
           Snow Signal View
         </div>
         <p className="text-sm leading-7 text-ink/60">
-          低饱和灰蓝雪山用于表达稳定、长期和审慎；极淡奶泡曲线保留茶饮咖啡行业识别。
+          保留深海军蓝、灰蓝雪山和极淡奶泡线条，主视觉仍然偏金融平台，但用咖啡与茶饮的质感把行业语境拉回来。
         </p>
       </div>
     </motion.div>
   )
 }
 
-function RiskIndexPanel() {
-  return (
-    <motion.div
-      {...fadeUp}
-      transition={{ duration: 0.78, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-      className="relative min-h-[430px] w-full min-w-0 rounded-[20px] bg-white px-7 py-8 shadow-soft ring-1 ring-line/85 md:min-h-[520px] md:px-10 md:py-10"
-    >
-      <div className="absolute right-7 top-7 flex items-center gap-2 rounded-full border border-line bg-[#F8FBFF] px-3 py-1.5 text-xs font-semibold text-copy">
-        <span className="h-2 w-2 rounded-full bg-champagne" />
-        UPDATE
-      </div>
-
-      <div className="flex h-full flex-col justify-between">
-        <div>
-          <p className="mb-5 text-xs font-black uppercase tracking-[0.32em] text-ocean">Micro Credit Risk Index</p>
-          <h1 className="max-w-xl text-[2.08rem] font-black leading-[1.08] tracking-[-0.01em] text-ink md:text-6xl md:tracking-[-0.035em]">
-            <span className="block md:inline">茶饮咖啡小微商户</span>
-            <span className="block md:inline">智能风控平台</span>
-          </h1>
-          <p className="mt-6 max-w-lg text-base leading-8 text-copy [word-break:break-all] md:text-lg md:[word-break:normal]">
-            将经营流水、门店活跃度、合同文本与商户画像转化为可解释的授信前风险指数，辅助完成轻量化信贷风控与经营分析。
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-end">
-          <div>
-            <p className="text-sm font-semibold text-copy">今日组合风险指数</p>
-            <div className="mt-3 flex items-end gap-3">
-              <span className="text-7xl font-black leading-none tracking-[-0.07em] text-champagne md:text-8xl">
-                37.62
-              </span>
-              <span className="mb-3 flex items-center gap-1 text-2xl font-black text-champagne">
-                <ArrowUpRight className="h-6 w-6" strokeWidth={2.3} />
-              </span>
-            </div>
-            <p className="mt-4 text-xs font-bold uppercase tracking-[0.28em] text-copy">
-              UPDATE&nbsp;&nbsp;2026 / 07 / 17
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-line bg-[#F8FBFF] p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm font-bold text-ink">
-                <Gauge className="h-5 w-5 text-champagne" />
-                风控解释
-              </div>
-              <span className="text-xs text-copy">
-                <span className="sm:hidden">中低</span>
-                <span className="hidden sm:inline">Low-Moderate</span>
-              </span>
-            </div>
-            <div className="space-y-3 text-sm text-copy">
-              <div className="flex items-center justify-between">
-                <span>现金流稳定性</span>
-                <span className="font-bold text-ink">82%</span>
-              </div>
-              <div className="h-2 rounded-full bg-line">
-                <div className="h-2 w-[82%] rounded-full bg-ocean" />
-              </div>
-              <div className="flex items-center justify-between">
-                <span>合同异常命中</span>
-                <span className="font-bold text-champagne">3 项</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>经营增长信号</span>
-                <span className="font-bold text-ink">正向</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-function SampleCard({
-  card,
-  index,
+function MetricCard({
+  label,
+  value,
+  hint,
+  icon: Icon,
 }: {
-  card: (typeof sampleCards)[number]
-  index: number
+  label: string
+  value: string
+  hint: string
+  icon: typeof Activity
 }) {
   return (
-    <motion.article
-      initial={false}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.62, delay: 0.22 + index * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -8, scale: 1.01 }}
-      className={`relative w-full min-w-0 overflow-hidden rounded-[20px] border border-white/80 bg-gradient-to-br ${card.accent} p-6 shadow-cafe ring-1 ring-line/80`}
-    >
-      <div className="absolute right-5 top-5 text-champagne">
-        <Sparkles className="h-5 w-5" strokeWidth={1.8} />
-      </div>
-      <p className="text-xs font-bold uppercase tracking-[0.24em] text-copy">{card.name}</p>
-      <h3 className="mt-3 text-xl font-black tracking-tight text-ink">{card.scene}</h3>
-      <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
+    <div className="rounded-[20px] border border-line/85 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-copy">月销售额</p>
-          <p className="mt-1 text-xl font-black text-ink">{card.sales}</p>
+          <p className="text-sm font-semibold text-copy">{label}</p>
+          <p className="mt-3 text-3xl font-black tracking-tight text-ink">{value}</p>
+          <p className="mt-2 text-xs uppercase tracking-[0.18em] text-copy">{hint}</p>
         </div>
-        <div>
-          <p className="text-copy">复购率</p>
-          <p className="mt-1 text-xl font-black text-ink">{card.repurchase}</p>
-        </div>
-        <div>
-          <p className="text-copy">风味评分</p>
-          <p className="mt-1 text-xl font-black text-ink">{card.flavor}</p>
-        </div>
-        <div>
-          <p className="text-copy">风险评级</p>
-          <p className="mt-1 text-xl font-black text-champagne">{card.score}</p>
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-ink text-champagne">
+          <Icon className="h-5 w-5" strokeWidth={1.8} />
         </div>
       </div>
-      <div className="mt-6 flex items-center justify-between rounded-2xl border border-line/80 bg-white/68 px-4 py-3">
-        <span className="text-sm font-semibold text-copy">{card.risk}</span>
-        <ChevronRight className="h-4 w-4 text-champagne" strokeWidth={2} />
-      </div>
-    </motion.article>
+    </div>
   )
 }
 
-function SampleCards() {
+function SkeletonBlock({ className }: { className?: string }) {
+  return <div className={`animate-pulse rounded-2xl bg-slate-200/75 ${className || ''}`} />
+}
+
+function SummaryStrip({ summary, state }: { summary: DashboardSummary | null; state: LoadState }) {
+  const cards = [
+    { label: '品牌总数', value: summary ? `${summary.brand_count}` : '—', hint: 'brands table', icon: BadgeCheck },
+    { label: '商户总数', value: summary ? `${summary.merchant_count}` : '—', hint: 'merchants table', icon: Store },
+    { label: '合同风险', value: summary ? `${summary.contract_risk_count}` : '—', hint: 'contract flags', icon: FileSearch },
+    { label: '舆情风险', value: summary ? `${summary.opinion_risk_count}` : '—', hint: 'public opinion flags', icon: Activity },
+  ] as const
+
   return (
-    <section className="relative z-10 -mt-12 grid w-full min-w-0 grid-cols-1 gap-5 px-4 md:grid-cols-3 md:px-8 lg:px-12">
-      {sampleCards.map((card, index) => (
-        <SampleCard key={card.name} card={card} index={index} />
-      ))}
+    <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {cards.map((card) =>
+        state === 'loading' && !summary ? (
+          <SkeletonBlock key={card.label} className="h-[130px] rounded-[20px]" />
+        ) : (
+          <MetricCard key={card.label} {...card} />
+        ),
+      )}
     </section>
   )
 }
 
-function InsightStrip() {
-  const items = [
-    { icon: Activity, label: '经营波动监测', value: '12 signals' },
-    { icon: FileSearch, label: '合同风险识别', value: 'NLP review' },
-    { icon: ChartNoAxesCombined, label: '智能报告生成', value: 'Explainable' },
-    { icon: Store, label: '门店画像归因', value: 'Merchant graph' },
+function RiskDistribution({
+  summary,
+  riskEntries,
+  totalRiskCount,
+}: {
+  summary: DashboardSummary | null
+  riskEntries: Array<[string, number]>
+  totalRiskCount: number
+}) {
+  return (
+    <section className="rounded-[20px] border border-line/85 bg-white p-6 shadow-soft">
+      <div className="mb-6 flex items-start justify-between gap-6">
+        <div>
+          <p className="text-sm font-bold text-ocean">风险分布</p>
+          <h2 className="mt-3 text-2xl font-black tracking-tight text-ink">当前授信样本的风险层级</h2>
+        </div>
+        <div className="rounded-2xl border border-line bg-[#F8FBFF] px-4 py-3 text-right">
+          <p className="text-xs uppercase tracking-[0.18em] text-copy">Data Source</p>
+          <p className="mt-2 text-sm font-bold text-ink">{summary ? 'API + SQLite Seed' : 'Waiting for API'}</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {riskEntries.length === 0 ? (
+          <>
+            <SkeletonBlock className="h-12" />
+            <SkeletonBlock className="h-12" />
+            <SkeletonBlock className="h-12" />
+          </>
+        ) : (
+          riskEntries.map(([level, count]) => {
+            const width = totalRiskCount ? Math.max(8, (count / totalRiskCount) * 100) : 8
+            return (
+              <div key={level} className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-semibold text-ink">{level}</span>
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold ring-1 ${riskTone(level)}`}>{count}</span>
+                </div>
+                <div className="h-2.5 rounded-full bg-line">
+                  <div
+                    className={`h-2.5 rounded-full ${
+                      level.includes('高') ? 'bg-rose-500' : level.includes('中') ? 'bg-amber-500' : 'bg-emerald-500'
+                    }`}
+                    style={{ width: `${width}%` }}
+                  />
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
+    </section>
+  )
+}
+
+function MerchantSelector({
+  summary,
+  assessments,
+  activeMerchantId,
+  onSelect,
+}: {
+  summary: DashboardSummary | null
+  assessments: RiskAssessment[]
+  activeMerchantId: string
+  onSelect: (merchantId: string) => void
+}) {
+  const items =
+    summary?.high_risk_merchants.map((item) => ({
+      merchant_id: item.merchant_id,
+      merchant_name: item.merchant_name,
+      score: item.score,
+      level: item.level,
+    })) ||
+    assessments.slice(0, 5).map((item) => ({
+      merchant_id: item.merchant_id,
+      merchant_name: item.merchant_name,
+      score: item.total_score,
+      level: item.risk_level,
+    }))
+
+  return (
+    <section className="rounded-[20px] border border-line/85 bg-white p-6 shadow-soft">
+      <div className="mb-5 flex items-start justify-between gap-6">
+        <div>
+          <p className="text-sm font-bold text-ocean">高风险商户</p>
+          <h2 className="mt-3 text-2xl font-black tracking-tight text-ink">优先跟进的授信样本</h2>
+        </div>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="inline-flex items-center gap-2 rounded-full border border-line bg-[#F8FBFF] px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:shadow-sm"
+        >
+          <RefreshCw className="h-4 w-4" />
+          重新同步
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {items.length === 0 ? (
+          <>
+            <SkeletonBlock className="h-20" />
+            <SkeletonBlock className="h-20" />
+            <SkeletonBlock className="h-20" />
+          </>
+        ) : (
+          items.map((item) => {
+            const selected = item.merchant_id === activeMerchantId
+            return (
+              <button
+                key={item.merchant_id}
+                type="button"
+                onClick={() => onSelect(item.merchant_id)}
+                className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition ${
+                  selected ? 'border-ocean bg-[#F8FBFF] shadow-sm' : 'border-line hover:bg-[#FAFCFF]'
+                }`}
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-ink">{item.merchant_name}</p>
+                  <p className="mt-1 text-xs text-copy">{item.merchant_id}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold ring-1 ${riskTone(item.level)}`}>{item.level}</span>
+                  <span className="text-lg font-black text-champagne">{formatScore(item.score)}</span>
+                </div>
+              </button>
+            )
+          })
+        )}
+      </div>
+    </section>
+  )
+}
+
+function MerchantProfileCard({
+  merchant,
+  brand,
+  assessment,
+}: {
+  merchant: MerchantProfile | null
+  brand: BrandProfile | null
+  assessment: RiskAssessment | null
+}) {
+  const metrics = merchant
+    ? [
+        { label: '城市', value: merchant.city },
+        { label: '商圈', value: merchant.business_area_type },
+        { label: '月营收', value: formatWan(merchant.monthly_revenue) },
+        { label: '客单价', value: `¥${merchant.average_ticket.toFixed(0)}` },
+        { label: '到店评分', value: merchant.takeaway_rating.toFixed(1) },
+        { label: '开店时长', value: `${merchant.opening_months} 个月` },
+      ]
+    : []
+
+  return (
+    <section className="rounded-[20px] border border-line/85 bg-white p-6 shadow-soft">
+      <div className="mb-5">
+        <p className="text-sm font-bold text-ocean">当前商户画像</p>
+        <h2 className="mt-3 text-2xl font-black tracking-tight text-ink">{merchant?.merchant_name || '等待选择商户'}</h2>
+        <p className="mt-2 text-sm leading-7 text-copy">
+          {merchant
+            ? `${merchant.brand_name} · ${merchant.city}${merchant.district ? ` · ${merchant.district}` : ''}`
+            : '点击左侧高风险商户列表，查看具体画像、品牌信息和报告预览。'}
+        </p>
+      </div>
+
+      {merchant ? (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {metrics.map((item) => (
+              <div key={item.label} className="rounded-2xl border border-line bg-[#FAFCFF] p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-copy">{item.label}</p>
+                <p className="mt-2 text-sm font-bold text-ink">{item.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-line bg-[#F8FBFF] p-4">
+            <div className="mb-3 flex items-center gap-2 text-sm font-bold text-ink">
+              <BadgeCheck className="h-4 w-4 text-champagne" />
+              经营与风险标签
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {merchant.negative_review_keywords.slice(0, 4).map((tag) => (
+                <span key={tag} className="rounded-full bg-white px-3 py-1 text-xs font-medium text-copy ring-1 ring-line">
+                  {tag}
+                </span>
+              ))}
+              {merchant.has_contract_risk && (
+                <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 ring-1 ring-rose-200">
+                  合同风险
+                </span>
+              )}
+              {merchant.recent_public_opinion_risk && (
+                <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 ring-1 ring-amber-200">
+                  舆情风险
+                </span>
+              )}
+            </div>
+          </div>
+
+          {brand && (
+            <div className="mt-5 rounded-2xl border border-line bg-white p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-ink">{brand.brand_name}</p>
+                  <p className="text-xs text-copy">{brand.category}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs uppercase tracking-[0.16em] text-copy">门店成熟度</p>
+                  <p className="mt-1 text-lg font-black text-champagne">{brand.franchise_maturity}/5</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {brand.risk_tags.slice(0, 4).map((tag) => (
+                  <span key={tag} className="rounded-full bg-[#F8FBFF] px-3 py-1 text-xs font-medium text-ink ring-1 ring-line">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-line bg-[#FAFCFF] p-6 text-sm text-copy">
+          当前还没有选中的商户。数据加载完成后会自动选中一条重点风险样本。
+        </div>
+      )}
+
+      {assessment && (
+        <div className="mt-5 rounded-2xl border border-line bg-[#F8FBFF] p-4">
+          <div className="mb-3 flex items-center gap-2 text-sm font-bold text-ink">
+            <Gauge className="h-4 w-4 text-champagne" />
+            评分拆解
+          </div>
+          <div className="space-y-3">
+            {assessment.dimension_scores.slice(0, 4).map((item) => (
+              <div key={item.dimension}>
+                <div className="flex items-center justify-between text-xs text-copy">
+                  <span>{item.dimension}</span>
+                  <span className="font-bold text-ink">{formatScore(item.score)}</span>
+                </div>
+                <div className="mt-1 h-2 rounded-full bg-line">
+                  <div className="h-2 rounded-full bg-ocean" style={{ width: `${Math.max(10, item.score)}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function ReportPreview({ reportMarkdown, reportState }: { reportMarkdown: string; reportState: LoadState }) {
+  return (
+    <section className="rounded-[20px] border border-line/85 bg-white p-6 shadow-soft">
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-bold text-ocean">智能报告预览</p>
+          <h2 className="mt-3 text-2xl font-black tracking-tight text-ink">后端生成的 Markdown 风险报告</h2>
+        </div>
+        <div className="rounded-full border border-line bg-[#F8FBFF] px-3 py-1 text-xs font-semibold text-copy">
+          {reportState === 'loading' ? '加载中' : reportState === 'error' ? '加载失败' : '已接通'}
+        </div>
+      </div>
+      <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded-2xl border border-line bg-[#FAFCFF] p-4 text-sm leading-7 text-copy">
+        {reportMarkdown || '选择一个商户后，这里会显示后端生成的 markdown 报告。'}
+      </pre>
+    </section>
+  )
+}
+
+function DatabaseStage({
+  merchants,
+  brands,
+  summary,
+  dataSource,
+}: {
+  merchants: MerchantProfile[]
+  brands: BrandProfile[]
+  summary: DashboardSummary | null
+  dataSource: DataSource
+}) {
+  const tables = [
+    { name: 'brand_profile', rows: brands.length, note: '品牌、价格带、门店成熟度' },
+    { name: 'merchant_profile', rows: merchants.length, note: '门店画像、营收、成本和风险位' },
+    { name: 'contract_record', rows: summary ? summary.contract_risk_count : 0, note: '待导入合同审查样本' },
+    { name: 'public_opinion', rows: summary ? summary.opinion_risk_count : 0, note: '待接入舆情样本与标签' },
   ]
 
   return (
-    <motion.section
-      initial={false}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.72, delay: 0.36, ease: [0.22, 1, 0.36, 1] }}
-      className="mt-10 grid w-full min-w-0 grid-cols-1 gap-4 rounded-[20px] border border-line/80 bg-white/70 p-4 shadow-sm backdrop-blur md:grid-cols-4"
-    >
-      {items.map(({ icon: Icon, label, value }) => (
-        <div key={label} className="flex items-center gap-3 rounded-2xl px-3 py-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ink text-champagne">
-            <Icon className="h-5 w-5" strokeWidth={1.8} />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-ink">{label}</p>
-            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-copy">{value}</p>
-          </div>
+    <section className="rounded-[24px] border border-line/85 bg-white p-6 shadow-soft">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-bold text-ocean">数据库预留区</p>
+          <h2 className="mt-3 text-2xl font-black tracking-tight text-ink">等 TS 数据到位后直接导入</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-7 text-copy">
+            这里先把数据库层的接入口预留好，后续只要把 TS 整理好的真实样本塞进来，就能替换当前 SQLite 示例数据，不需要再改页面结构。
+          </p>
         </div>
-      ))}
-    </motion.section>
+        <div className="flex items-center gap-3">
+          <span className="rounded-full border border-line bg-[#F8FBFF] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-copy">
+            {dataSource === 'api' ? 'Backend ready' : 'Local sample'}
+          </span>
+          <span className="rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+            {dataSource === 'api' ? 'API connected' : 'API pending'}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-4">
+        {tables.map((table) => (
+          <div key={table.name} className="rounded-2xl border border-line bg-[#FAFCFF] p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-copy">{table.name}</p>
+            <div className="mt-3 flex items-baseline justify-between gap-3">
+              <p className="text-3xl font-black tracking-tight text-ink">{table.rows}</p>
+              <ChevronRight className="h-4 w-4 text-champagne" />
+            </div>
+            <p className="mt-2 text-sm leading-6 text-copy">{table.note}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function LoadingShell() {
+  return (
+    <div className="space-y-4 rounded-[20px] border border-line bg-white p-6 shadow-soft">
+      <SkeletonBlock className="h-8 w-48" />
+      <SkeletonBlock className="h-14 w-4/5" />
+      <SkeletonBlock className="h-6 w-3/4" />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <SkeletonBlock className="h-24" />
+        <SkeletonBlock className="h-24" />
+        <SkeletonBlock className="h-24" />
+        <SkeletonBlock className="h-24" />
+      </div>
+    </div>
   )
 }
 
 export default function App() {
+  const {
+    state,
+    dataSource,
+    error,
+    summary,
+    assessments,
+    merchants,
+    brands,
+    activeMerchantId,
+    setActiveMerchantId,
+    reportMarkdown,
+    reportState,
+    activeMerchant,
+    activeAssessment,
+    activeBrand,
+    riskEntries,
+    totalRiskCount,
+    reload,
+  } = useDashboardData()
+
+  const primaryMerchant = summary?.high_risk_merchants[0]
+  const heroScore = primaryMerchant?.score ?? activeAssessment?.total_score ?? 0
+  const heroLevel = primaryMerchant?.level || activeAssessment?.risk_level || '等待数据'
+  const heroName = primaryMerchant?.merchant_name || activeMerchant?.merchant_name || '等待数据库导入'
+
   return (
-    <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-glacier via-[#F7FAFD] to-[#E8F0F8] px-4 py-5 text-ink md:px-8 md:py-8">
+    <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-glacier via-[#F7FAFD] to-[#E8F0F8] px-4 py-5 font-sans text-ink md:px-8 md:py-8">
       <EdgeDecor />
       <section className="relative mx-auto w-full max-w-[1400px]">
         <Navigation />
 
-        <div className="mt-8 w-full min-w-0 overflow-visible rounded-[24px] bg-white/24 p-0 md:mt-10">
-          <div className="grid w-full min-w-0 grid-cols-1 gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-            <RiskIndexPanel />
-            <MountainVisual />
+        {state === 'loading' && !summary ? (
+          <div className="mt-8">
+            <LoadingShell />
           </div>
-          <SampleCards />
-        </div>
+        ) : (
+          <>
+            <div className="mt-8 grid gap-6 lg:grid-cols-[1.02fr_0.98fr]">
+              <motion.div {...fadeIn} className="relative min-h-[430px] w-full overflow-hidden rounded-[20px] bg-white p-6 shadow-soft ring-1 ring-line md:min-h-[520px] md:p-10">
+                <div className="absolute right-6 top-6 rounded-full border border-line bg-[#F8FBFF] px-3 py-1.5 text-xs font-semibold text-copy">
+                  版本一 · 接口联通
+                </div>
 
-        <InsightStrip />
+                <div className="flex h-full flex-col justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.32em] text-ocean">Micro Credit Risk Index</p>
+                    <h1 className="mt-5 max-w-2xl text-[2.35rem] font-black leading-[1.08] tracking-[-0.03em] text-ink md:text-6xl">
+                      <span className="block">茶饮咖啡小微商户</span>
+                      <span className="block">轻量化信贷风控平台</span>
+                    </h1>
+                    <p className="mt-6 max-w-2xl text-base leading-8 text-copy md:text-lg">
+                      这一版把首页、风控列表、智能报告和数据库预留区都先搭起来，前端直接吃后端接口，后续 TS 只需要把正式数据补到数据库里。
+                    </p>
 
-        <div className="mt-9 flex flex-col gap-3 pb-8 text-xs text-copy md:flex-row md:items-center md:justify-between">
-          <p>Tea & Coffee Micro Credit Risk Platform · DeepSeek Skill + LangChain 风控原型</p>
-          <p className="font-semibold uppercase tracking-[0.22em] text-ink/55">Trusted · Explainable · Lightweight</p>
-        </div>
+                    <div className="mt-7 flex flex-wrap gap-3">
+                      <span className="rounded-full bg-ocean px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+                        {dataSource === 'api' ? 'API connected' : 'Mock fallback'}
+                      </span>
+                      <span className="rounded-full border border-line bg-[#F8FBFF] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-copy">
+                        SQLite seed ready
+                      </span>
+                      <span className="rounded-full border border-line bg-[#F8FBFF] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-copy">
+                        Waiting for TS data
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-10 grid gap-6 md:grid-cols-[1.12fr_0.88fr] md:items-end">
+                    <div>
+                      <p className="text-sm font-semibold text-copy">重点商户风险分</p>
+                      <div className="mt-3 flex items-end gap-3">
+                        <span className="text-7xl font-black leading-none tracking-[-0.07em] text-champagne md:text-8xl">
+                          {formatScore(heroScore)}
+                        </span>
+                        <span className="mb-3 flex items-center gap-1 text-2xl font-black text-champagne">
+                          <ArrowUpRight className="h-6 w-6" strokeWidth={2.3} />
+                        </span>
+                      </div>
+                      <p className="mt-4 text-xs font-bold uppercase tracking-[0.28em] text-copy">重点商户 · {heroName}</p>
+                      <p className="mt-2 text-sm text-copy">当前层级：{heroLevel}</p>
+                    </div>
+
+                    <div className="rounded-2xl border border-line bg-[#F8FBFF] p-5">
+                      <div className="mb-4 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm font-bold text-ink">
+                          <Gauge className="h-5 w-5 text-champagne" />
+                          风控解释
+                        </div>
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-copy ring-1 ring-line">
+                          {summary ? 'Low-Moderate' : 'Waiting'}
+                        </span>
+                      </div>
+                      <div className="space-y-3 text-sm text-copy">
+                        <div className="flex items-center justify-between">
+                          <span>商户总数</span>
+                          <span className="font-bold text-ink">{summary ? summary.merchant_count : '—'}</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-line">
+                          <div className="h-2 rounded-full bg-ocean" style={{ width: summary ? '82%' : '24%' }} />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>合同风险命中</span>
+                          <span className="font-bold text-champagne">{summary ? summary.contract_risk_count : '—'} 项</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>舆情风险命中</span>
+                          <span className="font-bold text-ink">{summary ? summary.opinion_risk_count : '—'} 项</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              <MountainVisual summary={summary} activeMerchant={activeMerchant} />
+            </div>
+
+            <SummaryStrip summary={summary} state={state} />
+
+            <div className="mt-8 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+              <div className="space-y-6">
+                <RiskDistribution summary={summary} riskEntries={riskEntries} totalRiskCount={totalRiskCount} />
+                <MerchantSelector
+                  summary={summary}
+                  assessments={assessments}
+                  activeMerchantId={activeMerchantId}
+                  onSelect={setActiveMerchantId}
+                />
+              </div>
+
+              <div className="space-y-6">
+                <MerchantProfileCard merchant={activeMerchant} brand={activeBrand} assessment={activeAssessment} />
+                <ReportPreview reportMarkdown={reportMarkdown} reportState={reportState} />
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <DatabaseStage merchants={merchants} brands={brands} summary={summary} dataSource={dataSource} />
+            </div>
+
+            <section className="mt-8 rounded-[20px] border border-line/85 bg-white/70 p-5 shadow-sm">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-sm font-bold text-ocean">当前联调状态</p>
+                  <p className="mt-2 text-sm leading-7 text-copy">
+                    前端已按后端接口完成对接；后端可用时会直接读取品牌、商户、风险评分和报告内容。当前环境若后端依赖未安装，页面会先使用本地样例兜底。数据库层先用 SQLite 示例数据承载，等 TS 把正式数据给到后，直接替换导入源即可。
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-copy">
+                  <span className="rounded-full border border-line bg-white px-4 py-2">{dataSource === 'api' ? 'API ready' : 'Mock fallback'}</span>
+                  <span className="rounded-full border border-line bg-white px-4 py-2">Report preview ready</span>
+                  <span className="rounded-full border border-line bg-white px-4 py-2">DB staging ready</span>
+                </div>
+              </div>
+            </section>
+
+            <div className="mt-8 flex flex-col gap-3 pb-8 text-xs text-copy md:flex-row md:items-center md:justify-between">
+              <p>Tea & Coffee Micro Credit Risk Platform · DeepSeek Skill + LangChain 风控原型</p>
+              <p className="font-semibold uppercase tracking-[0.22em] text-ink/55">Trusted · Explainable · Lightweight</p>
+            </div>
+          </>
+        )}
+
+        {state === 'error' && (
+          <div className="mt-6 rounded-[20px] border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-bold">前端已启动，但后端接口暂时没拉通。</p>
+                <p className="mt-2 leading-7">{error}</p>
+              </div>
+              <button
+                type="button"
+                onClick={reload}
+                className="inline-flex items-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white"
+              >
+                <RefreshCw className="h-4 w-4" />
+                重试
+              </button>
+            </div>
+          </div>
+        )}
       </section>
     </main>
   )
