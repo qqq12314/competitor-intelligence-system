@@ -112,6 +112,19 @@ export interface MerchantMarketContext {
   usage_note: string
 }
 
+export interface RegionRiskOverview {
+  city: string
+  merchant_count: number
+  high_attention_count: number
+  average_risk_score: number | null
+  city_store_count: number | null
+  market_heat: string | null
+  competition_level: string | null
+  top_brands: string[]
+  credit_policy_hint: string
+  follow_up_focus: string[]
+}
+
 export interface AIRiskExplanation {
   source: 'deepseek' | 'local_rules' | string
   summary: string
@@ -170,6 +183,19 @@ export function fetchMerchants() {
   return requestJson<MerchantProfile[]>('/merchants')
 }
 
+export function searchMerchants(params: {
+  keyword?: string
+  city?: string
+  risk_level?: string
+  category?: string
+}) {
+  const query = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) query.set(key, value)
+  })
+  return requestJson<MerchantProfile[]>(`/merchants/search?${query.toString()}`)
+}
+
 export function fetchMerchantReport(merchantId: string) {
   return requestText(`/reports/${merchantId}.md`)
 }
@@ -180,6 +206,10 @@ export function fetchSpiderOverview() {
 
 export function fetchMarketContext(merchantId: string) {
   return requestJson<MerchantMarketContext>(`/spider/market-context/${merchantId}`)
+}
+
+export function fetchRegionRisk(city: string) {
+  return requestJson<RegionRiskOverview>(`/spider/region-risk/${encodeURIComponent(city)}`)
 }
 
 export function fetchAIRiskExplanation(merchantId: string) {

@@ -5,11 +5,13 @@ from app.db.models import SpiderBrandStatRecord, SpiderCityStatRecord, SpiderNew
 from app.models.merchant import MerchantProfile
 from app.models.spider import (
     MerchantMarketContext,
+    RegionRiskOverview,
     SpiderBrandStat,
     SpiderCityStat,
     SpiderNewsSample,
     SpiderOverview,
 )
+from app.services.risk_scoring import score_merchant
 
 MISSING_CREDIT_FIELDS = [
     "近6个月营业流水",
@@ -154,4 +156,47 @@ def merchant_market_context(session: Session, merchant: MerchantProfile) -> Merc
         brand_risk_level=brand_record.risk_level if brand_record else None,
         external_risk_signals=signals,
         usage_note="该市场环境只作为外部辅助指标，不直接替代商户真实信贷资料和人工审批。",
+    )
+
+
+def region_risk_overview(session: Session, city: str, merchants: list[MerchantProfile]) -> RegionRiskOverview:
+    city_record = _find_city_record(session, city)
+    normalized_city = city_record.city if city_record else city
+    city_merchants = [
+        merchant
+        for merchant in merchants
+        if merchant.city == city or merchant.city == normalized_city or f"{merchant.city}市" == normalized_city
+    ]
+    assessments = [score_merchant(merchant) for merchant in city_merchants]
+    high_attention = [
+        item
+        for item in assessments
+        if item.risk_level in {"高风险", "中风险"} or item.total_score < 65
+    ]
+    average_score = round(sum(item.total_score for item in assessments) / len(assessments), 2) if assessments else None
+
+    if city_record and "高" in city_record.competition_level:
+        policy = "建议采用审慎授信策略，重点复核现金流真实性、租约稳定性和同商圈竞争压力。"
+    elif city_record:
+        policy = "可进入标准授信初筛，但仍需补充商户流水、成本和合同材料。"
+    else:
+        policy = "当前地区公开样本不足，建议先补充区域门店和经营材料后再形成授信判断。"
+
+    return RegionRiskOverview(
+        city=city,
+        merchant_count=len(city_merchants),
+        high_attention_count=len(high_attention),
+        average_risk_score=average_score,
+        city_store_count=city_record.store_count if city_record else None,
+        market_heat=city_record.market_heat if city_record else None,
+        competition_level=city_record.competition_level if city_record else None,
+        top_brands=city_record.top_brands if city_record else [],
+        credit_policy_hint=policy,
+        follow_up_focus=[
+            "近6个月收款流水",
+            "平台订单与复购数据",
+            "租赁合同剩余期限",
+            "同商圈竞品密度",
+            "负债和本次贷款用途",
+        ],
     )

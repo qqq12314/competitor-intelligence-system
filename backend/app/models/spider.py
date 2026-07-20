@@ -54,3 +54,16 @@ class MerchantMarketContext(BaseModel):
     brand_risk_level: str | None = None
     external_risk_signals: list[str] = Field(default_factory=list)
     usage_note: str
+
+
+class RegionRiskOverview(BaseModel):
+    city: str
+    merchant_count: int
+    high_attention_count: int
+    average_risk_score: float | None = None
+    city_store_count: int | None = None
+    market_heat: str | None = None
+    competition_level: str | None = None
+    top_brands: list[str] = Field(default_factory=list)
+    credit_policy_hint: str
+    follow_up_focus: list[str] = Field(default_factory=list)

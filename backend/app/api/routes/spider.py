@@ -2,13 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.models.spider import MerchantMarketContext, SpiderBrandStat, SpiderCityStat, SpiderNewsSample, SpiderOverview
-from app.repositories.risk_repository import get_merchant
+from app.models.spider import MerchantMarketContext, RegionRiskOverview, SpiderBrandStat, SpiderCityStat, SpiderNewsSample, SpiderOverview
+from app.repositories.risk_repository import get_merchant, list_merchants
 from app.services.spider_analytics import (
     list_spider_brands,
     list_spider_cities,
     list_spider_news,
     merchant_market_context,
+    region_risk_overview,
     spider_overview,
 )
 
@@ -41,3 +42,8 @@ def market_context(merchant_id: str, session: Session = Depends(get_db)) -> Merc
     if not merchant:
         raise HTTPException(status_code=404, detail="Merchant not found")
     return merchant_market_context(session, merchant)
+
+
+@router.get("/region-risk/{city}", response_model=RegionRiskOverview)
+def region_risk(city: str, session: Session = Depends(get_db)) -> RegionRiskOverview:
+    return region_risk_overview(session, city, list_merchants(session))

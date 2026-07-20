@@ -8,8 +8,10 @@ import {
   Coffee,
   FileSearch,
   Gauge,
+  MapPin,
   Mountain,
   RefreshCw,
+  Search,
   ShieldCheck,
   Sparkles,
   Store,
@@ -24,6 +26,7 @@ import {
   fetchMarketContext,
   fetchMerchantReport,
   fetchMerchants,
+  fetchRegionRisk,
   fetchRiskAssessments,
   fetchSpiderOverview,
   type AIRiskExplanation,
@@ -31,6 +34,7 @@ import {
   type DashboardSummary,
   type MerchantMarketContext,
   type MerchantProfile,
+  type RegionRiskOverview,
   type RiskAssessment,
   type SpiderOverview,
 } from './api/client'
@@ -57,6 +61,7 @@ const fadeIn = {
 
 type LoadState = 'loading' | 'ready' | 'error'
 type DataSource = 'api' | 'mock'
+type AnalysisState = 'idle' | 'loading' | 'ready' | 'error'
 
 function formatWan(value: number) {
   if (!Number.isFinite(value)) return '0.0万'
@@ -79,6 +84,10 @@ function riskTone(level: string) {
   return 'bg-emerald-50 text-emerald-700 ring-emerald-200'
 }
 
+function cityMatches(left: string, right: string) {
+  return left === right || `${left}市` === right || left === `${right}市`
+}
+
 function useDashboardData() {
   const [state, setState] = useState<LoadState>('loading')
   const [dataSource, setDataSource] = useState<DataSource>('api')
@@ -91,6 +100,7 @@ function useDashboardData() {
   const [activeMerchantId, setActiveMerchantId] = useState<string>('')
   const [marketContext, setMarketContext] = useState<MerchantMarketContext | null>(null)
   const [aiExplanation, setAiExplanation] = useState<AIRiskExplanation | null>(null)
+  const [aiState, setAiState] = useState<AnalysisState>('idle')
   const [reportMarkdown, setReportMarkdown] = useState<string>('')
   const [reportState, setReportState] = useState<LoadState>('loading')
 
@@ -126,7 +136,8 @@ function useDashboardData() {
       setBrands(MOCK_BRANDS)
       setSpiderOverview(MOCK_SPIDER_OVERVIEW)
       setMarketContext(MOCK_MARKET_CONTEXT)
-      setAiExplanation(MOCK_AI_EXPLANATION)
+      setAiExplanation(null)
+      setAiState('idle')
       setActiveMerchantId(MOCK_SUMMARY.high_risk_merchants[0]?.merchant_id || MOCK_MERCHANTS[0]?.merchant_id || '')
       setReportMarkdown(MOCK_REPORTS[MOCK_SUMMARY.high_risk_merchants[0]?.merchant_id || MOCK_MERCHANTS[0]?.merchant_id || ''] || '')
       setReportState('ready')
@@ -148,27 +159,22 @@ function useDashboardData() {
     setReportMarkdown('')
     setMarketContext(null)
     setAiExplanation(null)
+    setAiState('idle')
 
     if (dataSource === 'mock') {
       setReportMarkdown(MOCK_REPORTS[activeMerchantId] || '当前商户暂无本地样例报告。')
       setMarketContext({ ...MOCK_MARKET_CONTEXT, merchant_id: activeMerchantId })
-      setAiExplanation(MOCK_AI_EXPLANATION)
       setReportState('ready')
       return () => {
         cancelled = true
       }
     }
 
-    Promise.all([
-      fetchMerchantReport(activeMerchantId),
-      fetchMarketContext(activeMerchantId),
-      fetchAIRiskExplanation(activeMerchantId),
-    ])
-      .then(([content, context, explanation]) => {
+    Promise.all([fetchMerchantReport(activeMerchantId), fetchMarketContext(activeMerchantId)])
+      .then(([content, context]) => {
         if (!cancelled) {
           setReportMarkdown(content)
           setMarketContext(context)
-          setAiExplanation(explanation)
           setReportState('ready')
         }
       })
@@ -183,6 +189,28 @@ function useDashboardData() {
       cancelled = true
     }
   }, [activeMerchantId, dataSource])
+
+  const generateAiExplanation = async () => {
+    if (!activeMerchantId || aiState === 'loading') return
+    setAiState('loading')
+    setAiExplanation(null)
+
+    if (dataSource === 'mock') {
+      window.setTimeout(() => {
+        setAiExplanation(MOCK_AI_EXPLANATION)
+        setAiState('ready')
+      }, 420)
+      return
+    }
+
+    try {
+      const explanation = await fetchAIRiskExplanation(activeMerchantId)
+      setAiExplanation(explanation)
+      setAiState('ready')
+    } catch {
+      setAiState('error')
+    }
+  }
 
   const activeMerchant = useMemo(
     () => merchants.find((item) => item.merchant_id === activeMerchantId) || null,
@@ -223,6 +251,8 @@ function useDashboardData() {
     setActiveMerchantId,
     marketContext,
     aiExplanation,
+    aiState,
+    generateAiExplanation,
     reportMarkdown,
     reportState,
     activeMerchant,
@@ -387,6 +417,164 @@ function SummaryStrip({ summary, state }: { summary: DashboardSummary | null; st
   )
 }
 
+function FilterWorkbench({
+  searchQuery,
+  cityFilter,
+  riskLevelFilter,
+  categoryFilter,
+  cities,
+  resultCount,
+  onSearchChange,
+  onCityChange,
+  onRiskLevelChange,
+  onCategoryChange,
+  onClear,
+}: {
+  searchQuery: string
+  cityFilter: string
+  riskLevelFilter: string
+  categoryFilter: string
+  cities: string[]
+  resultCount: number
+  onSearchChange: (value: string) => void
+  onCityChange: (value: string) => void
+  onRiskLevelChange: (value: string) => void
+  onCategoryChange: (value: string) => void
+  onClear: () => void
+}) {
+  return (
+    <section className="mt-6 rounded-[20px] border border-line/85 bg-white p-5 shadow-soft">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div>
+          <p className="text-sm font-bold text-ocean">商户检索与地区筛选</p>
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-ink">先查地区，再看商户风险</h2>
+        </div>
+        <div className="rounded-full border border-line bg-[#F8FBFF] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-copy">
+          {resultCount} Matched Samples
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_auto]">
+        <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-line bg-[#FAFCFF] px-4">
+          <Search className="h-4 w-4 shrink-0 text-champagne" />
+          <input
+            value={searchQuery}
+            onChange={(event) => onSearchChange(event.target.value)}
+            className="h-12 w-full bg-transparent text-sm font-medium text-ink outline-none placeholder:text-copy/60"
+            placeholder="搜索商户、品牌或城市，例如：杭州、瑞幸、咖啡"
+          />
+        </label>
+
+        <select
+          value={cityFilter}
+          onChange={(event) => onCityChange(event.target.value)}
+          className="h-12 rounded-2xl border border-line bg-[#FAFCFF] px-4 text-sm font-semibold text-ink outline-none"
+        >
+          <option value="">全部地区</option>
+          {cities.map((city) => (
+            <option key={city} value={city}>
+              {city}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={riskLevelFilter}
+          onChange={(event) => onRiskLevelChange(event.target.value)}
+          className="h-12 rounded-2xl border border-line bg-[#FAFCFF] px-4 text-sm font-semibold text-ink outline-none"
+        >
+          <option value="">全部风险</option>
+          {riskOrder.map((level) => (
+            <option key={level} value={level}>
+              {level}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={categoryFilter}
+          onChange={(event) => onCategoryChange(event.target.value)}
+          className="h-12 rounded-2xl border border-line bg-[#FAFCFF] px-4 text-sm font-semibold text-ink outline-none"
+        >
+          <option value="">全部品类</option>
+          <option value="茶">茶饮</option>
+          <option value="咖啡">咖啡</option>
+        </select>
+
+        <button
+          type="button"
+          onClick={onClear}
+          className="h-12 rounded-2xl border border-line bg-white px-5 text-sm font-bold text-copy transition hover:-translate-y-0.5 hover:text-ink hover:shadow-sm"
+        >
+          清除
+        </button>
+      </div>
+    </section>
+  )
+}
+
+function RegionRiskCard({
+  region,
+  selectedCity,
+  overview,
+}: {
+  region: RegionRiskOverview | null
+  selectedCity: string
+  overview: SpiderOverview | null
+}) {
+  const city = selectedCity || region?.city || overview?.top_cities[0]?.city || '全部地区'
+  const fallbackCity = overview?.top_cities.find((item) => item.city === city || item.city === `${city}市`)
+
+  return (
+    <section className="rounded-[20px] border border-line/85 bg-white p-6 shadow-soft">
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-bold text-ocean">地区风控概览</p>
+          <h2 className="mt-3 text-2xl font-black tracking-tight text-ink">{city}茶饮咖啡小微商户</h2>
+        </div>
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-ink text-champagne">
+          <MapPin className="h-5 w-5" strokeWidth={1.8} />
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl border border-line bg-[#FAFCFF] p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-copy">Local Merchants</p>
+          <p className="mt-2 text-3xl font-black text-ink">{region?.merchant_count ?? '—'}</p>
+        </div>
+        <div className="rounded-2xl border border-line bg-[#FAFCFF] p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-copy">Store Samples</p>
+          <p className="mt-2 text-3xl font-black text-champagne">
+            {(region?.city_store_count ?? fallbackCity?.store_count ?? 0).toLocaleString()}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-line bg-[#FAFCFF] p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-copy">Market Heat</p>
+          <p className="mt-2 text-lg font-black text-ink">{region?.market_heat ?? fallbackCity?.market_heat ?? '待补充'}</p>
+        </div>
+        <div className="rounded-2xl border border-line bg-[#FAFCFF] p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-copy">Competition</p>
+          <p className="mt-2 text-lg font-black text-ink">{region?.competition_level ?? fallbackCity?.competition_level ?? '待补充'}</p>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-line bg-[#F8FBFF] p-4">
+        <p className="text-sm font-bold text-ink">地区授信提示</p>
+        <p className="mt-2 text-sm leading-7 text-copy">
+          {region?.credit_policy_hint || '请选择具体地区后查看本地商户样本、竞争强度和授信策略提示。'}
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {(region?.top_brands.length ? region.top_brands : fallbackCity?.top_brands || []).slice(0, 4).map((brand) => (
+            <span key={brand} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-copy ring-1 ring-line">
+              {brand}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function RiskDistribution({
   summary,
   riskEntries,
@@ -486,11 +674,9 @@ function MerchantSelector({
 
       <div className="space-y-3">
         {items.length === 0 ? (
-          <>
-            <SkeletonBlock className="h-20" />
-            <SkeletonBlock className="h-20" />
-            <SkeletonBlock className="h-20" />
-          </>
+          <div className="rounded-2xl border border-dashed border-line bg-[#FAFCFF] p-6 text-sm leading-7 text-copy">
+            当前筛选条件下暂无匹配商户。可以清除筛选条件，或等待 TS 后续补充更多地区和商户样本。
+          </div>
         ) : (
           items.map((item) => {
             const selected = item.merchant_id === activeMerchantId
@@ -739,7 +925,15 @@ function MarketIntelPanel({
   )
 }
 
-function AIExplanationPanel({ explanation }: { explanation: AIRiskExplanation | null }) {
+function AIExplanationPanel({
+  explanation,
+  aiState,
+  onGenerate,
+}: {
+  explanation: AIRiskExplanation | null
+  aiState: AnalysisState
+  onGenerate: () => void
+}) {
   return (
     <section className="rounded-[20px] border border-line/85 bg-white p-6 shadow-soft">
       <div className="mb-5 flex items-start justify-between gap-4">
@@ -751,6 +945,27 @@ function AIExplanationPanel({ explanation }: { explanation: AIRiskExplanation | 
           <Sparkles className="h-5 w-5" strokeWidth={1.8} />
         </div>
       </div>
+
+      <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-line bg-[#FAFCFF] p-4 lg:flex-row lg:items-center lg:justify-between">
+        <p className="text-sm leading-7 text-copy">
+          为节省 DeepSeek token，切换商户不会自动分析；点击按钮后才会把商户画像、评分和市场环境摘要发送给后端 AI 接口。
+        </p>
+        <button
+          type="button"
+          onClick={onGenerate}
+          disabled={aiState === 'loading'}
+          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-2xl bg-ink px-5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {aiState === 'loading' ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-champagne" />}
+          {aiState === 'loading' ? '生成中' : '生成智能风控分析'}
+        </button>
+      </div>
+
+      {aiState === 'error' && (
+        <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm leading-7 text-rose-700">
+          AI 分析请求失败，请确认后端服务和 DeepSeek 配置；未配置密钥时后端会自动使用本地规则兜底。
+        </div>
+      )}
 
       {explanation ? (
         <>
@@ -794,7 +1009,7 @@ function AIExplanationPanel({ explanation }: { explanation: AIRiskExplanation | 
         </>
       ) : (
         <div className="rounded-2xl border border-dashed border-line bg-[#FAFCFF] p-6 text-sm text-copy">
-          选择商户后，这里会展示基于评分结果和 TS 聚合市场环境生成的风险解释。
+          当前尚未生成智能分析。先选择商户，再点击上方按钮生成风险解释、授信建议和需补充资料清单。
         </div>
       )}
     </section>
@@ -888,6 +1103,8 @@ export default function App() {
     setActiveMerchantId,
     marketContext,
     aiExplanation,
+    aiState,
+    generateAiExplanation,
     reportMarkdown,
     reportState,
     activeMerchant,
@@ -902,6 +1119,109 @@ export default function App() {
   const heroScore = primaryMerchant?.score ?? activeAssessment?.total_score ?? 0
   const heroLevel = primaryMerchant?.level || activeAssessment?.risk_level || '等待数据'
   const heroName = primaryMerchant?.merchant_name || activeMerchant?.merchant_name || '等待数据库导入'
+  const [searchQuery, setSearchQuery] = useState('')
+  const [cityFilter, setCityFilter] = useState('')
+  const [riskLevelFilter, setRiskLevelFilter] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
+  const [regionOverview, setRegionOverview] = useState<RegionRiskOverview | null>(null)
+
+  const brandCategoryByName = useMemo(
+    () => Object.fromEntries(brands.map((brand) => [brand.brand_name, brand.category])),
+    [brands],
+  )
+
+  const cityOptions = useMemo(() => {
+    const fromMerchants = merchants.map((merchant) => merchant.city)
+    const fromSpider = spiderOverview?.top_cities.map((city) => city.city) || []
+    return Array.from(new Set([...fromMerchants, ...fromSpider])).sort((left, right) => left.localeCompare(right, 'zh-CN'))
+  }, [merchants, spiderOverview])
+
+  const assessmentsByMerchantId = useMemo(
+    () => Object.fromEntries(assessments.map((assessment) => [assessment.merchant_id, assessment])),
+    [assessments],
+  )
+
+  const filteredMerchants = useMemo(() => {
+    const keyword = searchQuery.trim().toLowerCase()
+    return merchants.filter((merchant) => {
+      const assessment = assessmentsByMerchantId[merchant.merchant_id]
+      const brandCategory = brandCategoryByName[merchant.brand_name] || ''
+      const haystack = [
+        merchant.merchant_name,
+        merchant.brand_name,
+        merchant.city,
+        merchant.district,
+        merchant.business_area_type,
+        merchant.franchise_type,
+        brandCategory,
+      ].join(' ').toLowerCase()
+
+      if (keyword && !haystack.includes(keyword)) return false
+      if (cityFilter && !cityMatches(merchant.city, cityFilter)) return false
+      if (riskLevelFilter && assessment?.risk_level !== riskLevelFilter) return false
+      if (categoryFilter && !brandCategory.includes(categoryFilter) && !merchant.business_area_type.includes(categoryFilter)) return false
+      return true
+    })
+  }, [assessmentsByMerchantId, brandCategoryByName, categoryFilter, cityFilter, merchants, riskLevelFilter, searchQuery])
+
+  const filteredAssessments = useMemo(
+    () => filteredMerchants.map((merchant) => assessmentsByMerchantId[merchant.merchant_id]).filter(Boolean) as RiskAssessment[],
+    [assessmentsByMerchantId, filteredMerchants],
+  )
+
+  const selectedRegionCity = cityFilter || activeMerchant?.city || spiderOverview?.top_cities[0]?.city || ''
+
+  useEffect(() => {
+    if (filteredMerchants.length > 0 && !filteredMerchants.some((merchant) => merchant.merchant_id === activeMerchantId)) {
+      setActiveMerchantId(filteredMerchants[0].merchant_id)
+    }
+  }, [activeMerchantId, filteredMerchants, setActiveMerchantId])
+
+  useEffect(() => {
+    if (!selectedRegionCity) return
+    let cancelled = false
+
+    if (dataSource === 'mock') {
+      const matchedCity = spiderOverview?.top_cities.find((city) => cityMatches(city.city, selectedRegionCity))
+      const localMerchants = merchants.filter((merchant) => cityMatches(merchant.city, selectedRegionCity))
+      const localAssessments = localMerchants.map((merchant) => assessmentsByMerchantId[merchant.merchant_id]).filter(Boolean) as RiskAssessment[]
+      const averageScore = localAssessments.length
+        ? Number((localAssessments.reduce((total, item) => total + item.total_score, 0) / localAssessments.length).toFixed(2))
+        : null
+      setRegionOverview({
+        city: selectedRegionCity,
+        merchant_count: localMerchants.length,
+        high_attention_count: localAssessments.filter((item) => item.total_score < 65).length,
+        average_risk_score: averageScore,
+        city_store_count: matchedCity?.store_count ?? null,
+        market_heat: matchedCity?.market_heat ?? null,
+        competition_level: matchedCity?.competition_level ?? null,
+        top_brands: matchedCity?.top_brands ?? [],
+        credit_policy_hint: matchedCity ? '当前地区竞争较活跃，建议结合现金流、租约和商圈竞品进行审慎授信。' : '当前地区样本不足，建议补充区域数据后再判断。',
+        follow_up_focus: ['近6个月收款流水', '平台订单与复购数据', '租赁合同剩余期限', '同商圈竞品密度'],
+      })
+      return
+    }
+
+    fetchRegionRisk(selectedRegionCity)
+      .then((result) => {
+        if (!cancelled) setRegionOverview(result)
+      })
+      .catch(() => {
+        if (!cancelled) setRegionOverview(null)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeMerchant?.city, assessmentsByMerchantId, dataSource, merchants, selectedRegionCity, spiderOverview])
+
+  const clearFilters = () => {
+    setSearchQuery('')
+    setCityFilter('')
+    setRiskLevelFilter('')
+    setCategoryFilter('')
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-glacier via-[#F7FAFD] to-[#E8F0F8] px-4 py-5 font-sans text-ink md:px-8 md:py-8">
@@ -997,26 +1317,44 @@ export default function App() {
 
             <SummaryStrip summary={summary} state={state} />
 
-            <div className="mt-8 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-              <div className="space-y-6">
-                <RiskDistribution summary={summary} riskEntries={riskEntries} totalRiskCount={totalRiskCount} />
-                <MerchantSelector
-                  summary={summary}
-                  assessments={assessments}
-                  activeMerchantId={activeMerchantId}
-                  onSelect={setActiveMerchantId}
-                />
-              </div>
+            <FilterWorkbench
+              searchQuery={searchQuery}
+              cityFilter={cityFilter}
+              riskLevelFilter={riskLevelFilter}
+              categoryFilter={categoryFilter}
+              cities={cityOptions}
+              resultCount={filteredMerchants.length}
+              onSearchChange={setSearchQuery}
+              onCityChange={setCityFilter}
+              onRiskLevelChange={setRiskLevelFilter}
+              onCategoryChange={setCategoryFilter}
+              onClear={clearFilters}
+            />
 
-              <div className="space-y-6">
-                <MerchantProfileCard merchant={activeMerchant} brand={activeBrand} assessment={activeAssessment} />
-                <AIExplanationPanel explanation={aiExplanation} />
-                <ReportPreview reportMarkdown={reportMarkdown} reportState={reportState} />
+            <div className="mt-8">
+              <div className="grid gap-6 xl:grid-cols-[0.86fr_1.14fr]">
+                <RegionRiskCard region={regionOverview} selectedCity={selectedRegionCity} overview={spiderOverview} />
+                <MarketIntelPanel overview={spiderOverview} context={marketContext} />
               </div>
             </div>
 
+            <div className="mt-8 grid gap-6 xl:grid-cols-[0.94fr_1.06fr]">
+              <MerchantSelector
+                summary={null}
+                assessments={filteredAssessments}
+                activeMerchantId={activeMerchantId}
+                onSelect={setActiveMerchantId}
+              />
+              <MerchantProfileCard merchant={activeMerchant} brand={activeBrand} assessment={activeAssessment} />
+            </div>
+
+            <div className="mt-8 grid gap-6 xl:grid-cols-[0.98fr_1.02fr]">
+              <RiskDistribution summary={summary} riskEntries={riskEntries} totalRiskCount={totalRiskCount} />
+              <AIExplanationPanel explanation={aiExplanation} aiState={aiState} onGenerate={generateAiExplanation} />
+            </div>
+
             <div className="mt-8">
-              <MarketIntelPanel overview={spiderOverview} context={marketContext} />
+              <ReportPreview reportMarkdown={reportMarkdown} reportState={reportState} />
             </div>
 
             <div className="mt-8">

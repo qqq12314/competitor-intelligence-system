@@ -43,10 +43,22 @@
 | --- | --- |
 | `GET /api/dashboard/summary` | 首页基础统计 |
 | `GET /api/risk` | 商户风险评分列表 |
+| `GET /api/merchants/search` | 按关键词、地区、风险等级、品类检索商户 |
 | `GET /api/spider/overview` | TS 爬虫数据总览 |
 | `GET /api/spider/market-context/{merchant_id}` | 单个商户外部市场环境 |
+| `GET /api/spider/region-risk/{city}` | 地区茶饮咖啡商户风控概览 |
 | `GET /api/ai/risk-explanation/{merchant_id}` | AI/规则生成风控解释 |
 | `GET /api/reports/{merchant_id}.md` | Markdown 风控报告预览 |
+
+## 前端交互更新
+
+为更贴近真实风控用户需求，首页已从纯展示页调整为轻量工作台：
+
+- 支持搜索商户、品牌、城市和商圈关键词。
+- 支持按地区、风险等级、茶饮/咖啡品类筛选商户样本。
+- 新增地区风控概览，展示城市公开门店样本、市场热度、竞争等级和地区授信提示。
+- DeepSeek 分析改为手动点击触发，切换商户时不自动调用模型，减少 token 消耗。
+- 页面布局拆成地区、市场、商户、AI、报告等连续横向模块，减少左右栏内容高度不一致带来的大面积空白。
 
 ## 运行方式
 
