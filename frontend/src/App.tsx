@@ -13,25 +13,35 @@ import {
   ShieldCheck,
   Sparkles,
   Store,
+  TrendingUp,
   Waves,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import {
+  fetchAIRiskExplanation,
   fetchBrands,
   fetchDashboardSummary,
+  fetchMarketContext,
   fetchMerchantReport,
   fetchMerchants,
   fetchRiskAssessments,
+  fetchSpiderOverview,
+  type AIRiskExplanation,
   type BrandProfile,
   type DashboardSummary,
+  type MerchantMarketContext,
   type MerchantProfile,
   type RiskAssessment,
+  type SpiderOverview,
 } from './api/client'
 import {
+  MOCK_AI_EXPLANATION,
   MOCK_ASSESSMENTS,
   MOCK_BRANDS,
+  MOCK_MARKET_CONTEXT,
   MOCK_MERCHANTS,
   MOCK_REPORTS,
+  MOCK_SPIDER_OVERVIEW,
   MOCK_SUMMARY,
 } from './mockData'
 
@@ -77,7 +87,10 @@ function useDashboardData() {
   const [assessments, setAssessments] = useState<RiskAssessment[]>([])
   const [merchants, setMerchants] = useState<MerchantProfile[]>([])
   const [brands, setBrands] = useState<BrandProfile[]>([])
+  const [spiderOverview, setSpiderOverview] = useState<SpiderOverview | null>(null)
   const [activeMerchantId, setActiveMerchantId] = useState<string>('')
+  const [marketContext, setMarketContext] = useState<MerchantMarketContext | null>(null)
+  const [aiExplanation, setAiExplanation] = useState<AIRiskExplanation | null>(null)
   const [reportMarkdown, setReportMarkdown] = useState<string>('')
   const [reportState, setReportState] = useState<LoadState>('loading')
 
@@ -87,17 +100,19 @@ function useDashboardData() {
       setState('loading')
       setError(null)
 
-      const [summaryResult, assessmentResult, merchantResult, brandResult] = await Promise.all([
+      const [summaryResult, assessmentResult, merchantResult, brandResult, spiderOverviewResult] = await Promise.all([
         fetchDashboardSummary(),
         fetchRiskAssessments(),
         fetchMerchants(),
         fetchBrands(),
+        fetchSpiderOverview(),
       ])
 
       setSummary(summaryResult)
       setAssessments(assessmentResult)
       setMerchants(merchantResult)
       setBrands(brandResult)
+      setSpiderOverview(spiderOverviewResult)
 
       const firstActiveId =
         summaryResult.high_risk_merchants[0]?.merchant_id || assessmentResult[0]?.merchant_id || merchantResult[0]?.merchant_id || ''
@@ -109,6 +124,9 @@ function useDashboardData() {
       setAssessments(MOCK_ASSESSMENTS)
       setMerchants(MOCK_MERCHANTS)
       setBrands(MOCK_BRANDS)
+      setSpiderOverview(MOCK_SPIDER_OVERVIEW)
+      setMarketContext(MOCK_MARKET_CONTEXT)
+      setAiExplanation(MOCK_AI_EXPLANATION)
       setActiveMerchantId(MOCK_SUMMARY.high_risk_merchants[0]?.merchant_id || MOCK_MERCHANTS[0]?.merchant_id || '')
       setReportMarkdown(MOCK_REPORTS[MOCK_SUMMARY.high_risk_merchants[0]?.merchant_id || MOCK_MERCHANTS[0]?.merchant_id || ''] || '')
       setReportState('ready')
@@ -128,19 +146,29 @@ function useDashboardData() {
     let cancelled = false
     setReportState('loading')
     setReportMarkdown('')
+    setMarketContext(null)
+    setAiExplanation(null)
 
     if (dataSource === 'mock') {
       setReportMarkdown(MOCK_REPORTS[activeMerchantId] || '当前商户暂无本地样例报告。')
+      setMarketContext({ ...MOCK_MARKET_CONTEXT, merchant_id: activeMerchantId })
+      setAiExplanation(MOCK_AI_EXPLANATION)
       setReportState('ready')
       return () => {
         cancelled = true
       }
     }
 
-    fetchMerchantReport(activeMerchantId)
-      .then((content) => {
+    Promise.all([
+      fetchMerchantReport(activeMerchantId),
+      fetchMarketContext(activeMerchantId),
+      fetchAIRiskExplanation(activeMerchantId),
+    ])
+      .then(([content, context, explanation]) => {
         if (!cancelled) {
           setReportMarkdown(content)
+          setMarketContext(context)
+          setAiExplanation(explanation)
           setReportState('ready')
         }
       })
@@ -190,8 +218,11 @@ function useDashboardData() {
     assessments,
     merchants,
     brands,
+    spiderOverview,
     activeMerchantId,
     setActiveMerchantId,
+    marketContext,
+    aiExplanation,
     reportMarkdown,
     reportState,
     activeMerchant,
@@ -628,15 +659,159 @@ function ReportPreview({ reportMarkdown, reportState }: { reportMarkdown: string
   )
 }
 
+function MarketIntelPanel({
+  overview,
+  context,
+}: {
+  overview: SpiderOverview | null
+  context: MerchantMarketContext | null
+}) {
+  const topCities = overview?.top_cities.slice(0, 3) || []
+  const topBrands = overview?.top_brands.slice(0, 3) || []
+
+  return (
+    <section className="rounded-[20px] border border-line/85 bg-white p-6 shadow-soft">
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-bold text-ocean">TS 数据市场环境</p>
+          <h2 className="mt-3 text-2xl font-black tracking-tight text-ink">公开爬虫数据的轻量化接入</h2>
+        </div>
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-ink text-champagne">
+          <TrendingUp className="h-5 w-5" strokeWidth={1.8} />
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-line bg-[#FAFCFF] p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-copy">Store Samples</p>
+          <p className="mt-2 text-2xl font-black text-ink">{overview ? overview.store_count.toLocaleString() : '—'}</p>
+        </div>
+        <div className="rounded-2xl border border-line bg-[#FAFCFF] p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-copy">Brands</p>
+          <p className="mt-2 text-2xl font-black text-ink">{overview?.brand_count ?? '—'}</p>
+        </div>
+        <div className="rounded-2xl border border-line bg-[#FAFCFF] p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-copy">News</p>
+          <p className="mt-2 text-2xl font-black text-champagne">{overview?.news_count ?? '—'}</p>
+        </div>
+      </div>
+
+      {context && (
+        <div className="mt-5 rounded-2xl border border-line bg-[#F8FBFF] p-4">
+          <p className="text-sm font-bold text-ink">{context.city} / {context.brand_name}</p>
+          <p className="mt-2 text-sm leading-7 text-copy">{context.usage_note}</p>
+          <div className="mt-4 space-y-2">
+            {context.external_risk_signals.slice(0, 3).map((signal) => (
+              <div key={signal} className="flex gap-2 text-sm leading-6 text-copy">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-champagne" />
+                <span>{signal}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <div>
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-copy">Top Cities</p>
+          <div className="space-y-2">
+            {topCities.map((city) => (
+              <div key={city.city} className="flex items-center justify-between rounded-2xl border border-line bg-white px-4 py-3">
+                <span className="text-sm font-bold text-ink">{city.city}</span>
+                <span className="text-sm font-black text-champagne">{city.store_count.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-copy">Top Brands</p>
+          <div className="space-y-2">
+            {topBrands.map((brand) => (
+              <div key={brand.brand_name} className="flex items-center justify-between rounded-2xl border border-line bg-white px-4 py-3">
+                <span className="text-sm font-bold text-ink">{brand.brand_name}</span>
+                <span className="text-sm font-black text-champagne">{brand.store_count.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function AIExplanationPanel({ explanation }: { explanation: AIRiskExplanation | null }) {
+  return (
+    <section className="rounded-[20px] border border-line/85 bg-white p-6 shadow-soft">
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-bold text-ocean">AI 可解释风控</p>
+          <h2 className="mt-3 text-2xl font-black tracking-tight text-ink">DeepSeek 压缩摘要分析</h2>
+        </div>
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-ink text-champagne">
+          <Sparkles className="h-5 w-5" strokeWidth={1.8} />
+        </div>
+      </div>
+
+      {explanation ? (
+        <>
+          <div className="rounded-2xl border border-line bg-[#F8FBFF] p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-copy ring-1 ring-line">
+                {explanation.source === 'deepseek' ? 'DeepSeek' : 'Local Rules'}
+              </span>
+              <span className="text-xs font-semibold text-copy">Token Saving</span>
+            </div>
+            <p className="text-sm leading-7 text-copy">{explanation.summary}</p>
+          </div>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            <div>
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-copy">Risk Points</p>
+              <div className="space-y-2">
+                {explanation.risk_points.slice(0, 4).map((item) => (
+                  <div key={item} className="rounded-2xl border border-line bg-white px-4 py-3 text-sm leading-6 text-copy">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-copy">Follow-up Data</p>
+              <div className="flex flex-wrap gap-2">
+                {explanation.follow_up_data.slice(0, 6).map((item) => (
+                  <span key={item} className="rounded-full bg-[#F8FBFF] px-3 py-1.5 text-xs font-semibold text-copy ring-1 ring-line">
+                    {item}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-4 rounded-2xl border border-line bg-[#FAFCFF] p-4 text-sm leading-7 text-copy">
+                {explanation.credit_suggestion}
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-5 text-xs leading-6 text-copy">{explanation.token_saving_note}</p>
+        </>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-line bg-[#FAFCFF] p-6 text-sm text-copy">
+          选择商户后，这里会展示基于评分结果和 TS 聚合市场环境生成的风险解释。
+        </div>
+      )}
+    </section>
+  )
+}
+
 function DatabaseStage({
   merchants,
   brands,
   summary,
+  spiderOverview,
   dataSource,
 }: {
   merchants: MerchantProfile[]
   brands: BrandProfile[]
   summary: DashboardSummary | null
+  spiderOverview: SpiderOverview | null
   dataSource: DataSource
 }) {
   const tables = [
@@ -644,6 +819,7 @@ function DatabaseStage({
     { name: 'merchant_profile', rows: merchants.length, note: '门店画像、营收、成本和风险位' },
     { name: 'contract_record', rows: summary ? summary.contract_risk_count : 0, note: '待导入合同审查样本' },
     { name: 'public_opinion', rows: summary ? summary.opinion_risk_count : 0, note: '待接入舆情样本与标签' },
+    { name: 'spider_aggregate', rows: spiderOverview ? spiderOverview.store_count : 0, note: 'TS 门店、品牌、城市聚合样例' },
   ]
 
   return (
@@ -666,7 +842,7 @@ function DatabaseStage({
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-4">
+      <div className="mt-6 grid gap-4 lg:grid-cols-5">
         {tables.map((table) => (
           <div key={table.name} className="rounded-2xl border border-line bg-[#FAFCFF] p-4">
             <p className="text-xs uppercase tracking-[0.18em] text-copy">{table.name}</p>
@@ -707,8 +883,11 @@ export default function App() {
     assessments,
     merchants,
     brands,
+    spiderOverview,
     activeMerchantId,
     setActiveMerchantId,
+    marketContext,
+    aiExplanation,
     reportMarkdown,
     reportState,
     activeMerchant,
@@ -831,12 +1010,17 @@ export default function App() {
 
               <div className="space-y-6">
                 <MerchantProfileCard merchant={activeMerchant} brand={activeBrand} assessment={activeAssessment} />
+                <AIExplanationPanel explanation={aiExplanation} />
                 <ReportPreview reportMarkdown={reportMarkdown} reportState={reportState} />
               </div>
             </div>
 
             <div className="mt-8">
-              <DatabaseStage merchants={merchants} brands={brands} summary={summary} dataSource={dataSource} />
+              <MarketIntelPanel overview={spiderOverview} context={marketContext} />
+            </div>
+
+            <div className="mt-8">
+              <DatabaseStage merchants={merchants} brands={brands} summary={summary} spiderOverview={spiderOverview} dataSource={dataSource} />
             </div>
 
             <section className="mt-8 rounded-[20px] border border-line/85 bg-white/70 p-5 shadow-sm">

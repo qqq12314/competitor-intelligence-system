@@ -28,11 +28,11 @@
 
 ## 技术栈
 
-- 前端：Vue 3、Vite、Element Plus、ECharts、Axios。
+- 前端：React、TypeScript、Vite、Tailwind CSS、Lucide React、Framer Motion。
 - 后端：FastAPI、Pydantic v2、SQLAlchemy 2。
 - 数据库：开发期 SQLite，后续兼容 MySQL 8。
 - 大模型：DeepSeek API。
-- LLM 工程：LangChain PromptTemplate、Structured Output。
+- LLM 工程：LangChain / DeepSeek 结构化分析预留，当前采用压缩摘要 JSON + 本地规则兜底。
 - 测试：pytest、httpx。
 - 部署：Docker Compose、Nginx。
 
@@ -41,16 +41,17 @@
 ```text
 backend/
   app/
-    api/routes/          品牌、商户、评分、合同、报告、看板接口
+    api/routes/          品牌、商户、评分、合同、报告、看板、TS数据、AI分析接口
     core/                配置与基础能力
     models/              Pydantic 领域模型
     services/            评分、合同审查、报告生成服务
 data/
   sample/                品牌、商户、合同、舆情样例数据
+  spider/                TS 爬虫聚合样例数据
   dictionary/            风控指标字典
 docs/                    计划、架构、API 和项目策划案
 frontend/
-  src/                   Vue 3 风控看板
+  src/                   React 风控看板
 skills/
   deepseek_risk_analyst/ DeepSeek 风控分析 Skill
 ```
@@ -79,8 +80,8 @@ uvicorn app.main:app --reload
 
 ```powershell
 cd frontend
-pnpm install
-pnpm dev
+cmd /c npm install
+cmd /c npm run dev
 ```
 
 访问地址：
@@ -92,6 +93,8 @@ pnpm dev
 
 ## 当前状态
 
-当前仓库已具备 FastAPI/Vue 工程骨架、SQLite + SQLAlchemy 数据层、四类样例数据自动入库、七维评分、合同规则审查、Markdown 报告和风控看板。下一阶段重点是评分权重配置化、DeepSeek 结构化分析、自动化测试和报告导出。
+当前仓库已具备 FastAPI/React 工程骨架、SQLite + SQLAlchemy 数据层、四类基础样例数据自动入库、TS 爬虫聚合样例数据入库、七维评分、合同规则审查、Markdown 报告、AI 风控解释接口和金融风控首页看板。DeepSeek 接口采用省 token 设计：后端先聚合数据，只把商户画像、评分结果和市场环境摘要 JSON 发送给模型；未配置密钥时使用本地规则兜底，保证演示稳定。
 
 Day 2 数据库说明见 [docs/day2-database.md](docs/day2-database.md)。
+
+第二阶段数据与 AI 接入说明见 [docs/phase2-data-ai-integration.md](docs/phase2-data-ai-integration.md)。

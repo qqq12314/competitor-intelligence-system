@@ -67,6 +67,61 @@ export interface BrandProfile {
   risk_tags: string[]
 }
 
+export interface SpiderBrandStat {
+  brand_name: string
+  store_count: number
+  news_count: number
+  sample_risk_score: number
+  risk_level: string
+  primary_signal: string
+}
+
+export interface SpiderCityStat {
+  city: string
+  store_count: number
+  market_heat: string
+  competition_level: string
+  top_brands: string[]
+}
+
+export interface SpiderOverview {
+  brand_count: number
+  city_count: number
+  store_count: number
+  news_count: number
+  top_brands: SpiderBrandStat[]
+  top_cities: SpiderCityStat[]
+  missing_credit_fields: string[]
+  data_stage_note: string
+}
+
+export interface MerchantMarketContext {
+  merchant_id: string
+  merchant_name: string
+  city: string
+  brand_name: string
+  city_store_count: number | null
+  city_market_heat: string | null
+  city_competition_level: string | null
+  city_top_brands: string[]
+  brand_store_count: number | null
+  brand_news_count: number | null
+  brand_sample_risk_score: number | null
+  brand_risk_level: string | null
+  external_risk_signals: string[]
+  usage_note: string
+}
+
+export interface AIRiskExplanation {
+  source: 'deepseek' | 'local_rules' | string
+  summary: string
+  risk_points: string[]
+  credit_suggestion: string
+  business_suggestions: string[]
+  follow_up_data: string[]
+  token_saving_note: string
+}
+
 async function requestJson<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
@@ -117,6 +172,18 @@ export function fetchMerchants() {
 
 export function fetchMerchantReport(merchantId: string) {
   return requestText(`/reports/${merchantId}.md`)
+}
+
+export function fetchSpiderOverview() {
+  return requestJson<SpiderOverview>('/spider/overview')
+}
+
+export function fetchMarketContext(merchantId: string) {
+  return requestJson<MerchantMarketContext>(`/spider/market-context/${merchantId}`)
+}
+
+export function fetchAIRiskExplanation(merchantId: string) {
+  return requestJson<AIRiskExplanation>(`/ai/risk-explanation/${merchantId}`)
 }
 
 export function reviewContract(payload: unknown) {

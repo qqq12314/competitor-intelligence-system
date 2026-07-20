@@ -1,4 +1,12 @@
-import type { BrandProfile, DashboardSummary, MerchantProfile, RiskAssessment } from './api/client'
+import type {
+  AIRiskExplanation,
+  BrandProfile,
+  DashboardSummary,
+  MerchantMarketContext,
+  MerchantProfile,
+  RiskAssessment,
+  SpiderOverview,
+} from './api/client'
 
 export const MOCK_SUMMARY: DashboardSummary = {
   brand_count: 6,
@@ -269,4 +277,93 @@ export const MOCK_REPORTS: Record<string, string> = {
 2. 保持正常贷后跟踪。
 3. 关注高峰期履约稳定性。
 `,
+}
+
+export const MOCK_SPIDER_OVERVIEW: SpiderOverview = {
+  brand_count: 10,
+  city_count: 10,
+  store_count: 24986,
+  news_count: 290,
+  top_brands: [
+    {
+      brand_name: '蜜雪冰城',
+      store_count: 4719,
+      news_count: 31,
+      sample_risk_score: 63.4,
+      risk_level: '中风险',
+      primary_signal: '门店规模大且加盟密度高，适合观察区域竞争和价格带压力',
+    },
+    {
+      brand_name: '瑞幸咖啡',
+      store_count: 4434,
+      news_count: 42,
+      sample_risk_score: 58.8,
+      risk_level: '中低风险',
+      primary_signal: '品牌数字化能力强，但核心城市咖啡竞争密度高',
+    },
+    {
+      brand_name: '库迪咖啡',
+      store_count: 4422,
+      news_count: 38,
+      sample_risk_score: 66.2,
+      risk_level: '中风险',
+      primary_signal: '扩张速度快，需关注促销依赖与单店稳定性',
+    },
+  ],
+  top_cities: [
+    {
+      city: '杭州市',
+      store_count: 2890,
+      market_heat: '高活跃',
+      competition_level: '高竞争',
+      top_brands: ['瑞幸咖啡', '库迪咖啡', '星巴克'],
+    },
+    {
+      city: '上海市',
+      store_count: 2743,
+      market_heat: '高活跃',
+      competition_level: '高竞争',
+      top_brands: ['星巴克', '瑞幸咖啡', '霸王茶姬'],
+    },
+    {
+      city: '广州市',
+      store_count: 2718,
+      market_heat: '高活跃',
+      competition_level: '高竞争',
+      top_brands: ['蜜雪冰城', '茶百道', '喜茶'],
+    },
+  ],
+  missing_credit_fields: ['近6个月营业流水', '月订单量与客单价明细', '会员复购率', '房租、人工、原料成本', '现有负债与贷款申请金额', '合同原文'],
+  data_stage_note: '当前 TS 数据用于外部经营环境评估；真实授信仍需补充商户流水、成本、负债和合同原文。',
+}
+
+export const MOCK_MARKET_CONTEXT: MerchantMarketContext = {
+  merchant_id: 'M-1004',
+  merchant_name: '北屿茶语·中央商场店',
+  city: '杭州市',
+  brand_name: '北屿茶语',
+  city_store_count: 2890,
+  city_market_heat: '高活跃',
+  city_competition_level: '高竞争',
+  city_top_brands: ['瑞幸咖啡', '库迪咖啡', '星巴克'],
+  brand_store_count: null,
+  brand_news_count: null,
+  brand_sample_risk_score: null,
+  brand_risk_level: null,
+  external_risk_signals: [
+    '杭州市门店样本数约2890，市场热度为高活跃。',
+    '城市竞争水平：高竞争，主要品牌包括瑞幸咖啡、库迪咖啡、星巴克。',
+    '当前 TS 聚合数据暂未匹配该品牌，前期按独立/区域品牌审慎处理。',
+  ],
+  usage_note: '该市场环境只作为外部辅助指标，不直接替代商户真实信贷资料和人工审批。',
+}
+
+export const MOCK_AI_EXPLANATION: AIRiskExplanation = {
+  source: 'local_rules',
+  summary: '该商户综合风险处于中等区间。结合 TS 公开经营环境数据，当前判断重点应放在现金流真实性、区域竞争压力和合同稳定性。',
+  risk_points: ['区域同类门店密度较高，存在客流分流压力。', '租金占比偏高，现金流安全垫需要复核。', '合同条款存在潜在经营约束。'],
+  credit_suggestion: '建议审慎授信，控制额度并设置月度经营数据回访。',
+  business_suggestions: ['补充近6个月流水和平台订单截图。', '结合商圈竞品密度调整授信额度。', '将租赁合同剩余期限纳入贷前复核。'],
+  follow_up_data: ['近6个月收款流水', '平台订单与复购数据', '租赁合同及剩余租期', '现有负债和贷款用途'],
+  token_saving_note: '本结果未发送原始 CSV，仅使用后端聚合后的商户画像、评分结果和市场环境摘要。',
 }

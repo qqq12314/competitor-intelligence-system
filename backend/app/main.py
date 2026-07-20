@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import brands, contracts, dashboard, merchants, reports, risk
+from app.api.routes import ai, brands, contracts, dashboard, merchants, reports, risk, spider
 from app.core.config import settings
 from app.db.seed import initialize_database
 
@@ -34,6 +34,8 @@ app.include_router(risk.router, prefix="/api/risk", tags=["risk"])
 app.include_router(contracts.router, prefix="/api/contracts", tags=["contracts"])
 app.include_router(reports.router, prefix="/api/reports", tags=["reports"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
+app.include_router(spider.router, prefix="/api/spider", tags=["spider-data"])
+app.include_router(ai.router, prefix="/api/ai", tags=["ai-analysis"])
 
 
 @app.get("/")

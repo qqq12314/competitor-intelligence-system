@@ -6,15 +6,32 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db.base import Base
-from app.db.models import BrandRecord, ContractRecord, MerchantRecord, PublicOpinionRecord
+from app.db.models import (
+    BrandRecord,
+    ContractRecord,
+    MerchantRecord,
+    PublicOpinionRecord,
+    SpiderBrandStatRecord,
+    SpiderCityStatRecord,
+    SpiderNewsRecord,
+)
 from app.db.session import SessionLocal, engine
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 DATA_DIR = ROOT_DIR / "data" / "sample"
+SPIDER_DATA_DIR = ROOT_DIR / "data" / "spider"
 
 
 def _rows(filename: str) -> list[dict[str, str]]:
     with (DATA_DIR / filename).open(encoding="utf-8-sig", newline="") as file:
+        return list(csv.DictReader(file))
+
+
+def _spider_rows(filename: str) -> list[dict[str, str]]:
+    path = SPIDER_DATA_DIR / filename
+    if not path.exists():
+        return []
+    with path.open(encoding="utf-8-sig", newline="") as file:
         return list(csv.DictReader(file))
 
 
@@ -24,6 +41,9 @@ def _tags(value: str) -> list[str]:
 
 def seed_database(session: Session, force: bool = False) -> dict[str, int]:
     if force:
+        session.query(SpiderNewsRecord).delete()
+        session.query(SpiderCityStatRecord).delete()
+        session.query(SpiderBrandStatRecord).delete()
         session.query(PublicOpinionRecord).delete()
         session.query(ContractRecord).delete()
         session.query(MerchantRecord).delete()
@@ -105,12 +125,60 @@ def seed_database(session: Session, force: bool = False) -> dict[str, int]:
             ]
         )
 
+    if session.scalar(select(func.count()).select_from(SpiderBrandStatRecord)) == 0:
+        session.add_all(
+            [
+                SpiderBrandStatRecord(
+                    brand_name=row["brand_name"],
+                    store_count=int(row["store_count"]),
+                    news_count=int(row["news_count"]),
+                    sample_risk_score=float(row["sample_risk_score"]),
+                    risk_level=row["risk_level"],
+                    primary_signal=row["primary_signal"],
+                )
+                for row in _spider_rows("brand_stats.csv")
+            ]
+        )
+
+    if session.scalar(select(func.count()).select_from(SpiderCityStatRecord)) == 0:
+        session.add_all(
+            [
+                SpiderCityStatRecord(
+                    city=row["city"],
+                    store_count=int(row["store_count"]),
+                    market_heat=row["market_heat"],
+                    competition_level=row["competition_level"],
+                    top_brands=_tags(row["top_brands"]),
+                )
+                for row in _spider_rows("city_stats.csv")
+            ]
+        )
+
+    if session.scalar(select(func.count()).select_from(SpiderNewsRecord)) == 0:
+        session.add_all(
+            [
+                SpiderNewsRecord(
+                    news_id=row["news_id"],
+                    brand_name=row["brand_name"],
+                    title=row["title"],
+                    source=row["source"],
+                    published_at=row["published_at"],
+                    sentiment=row["sentiment"],
+                    risk_signal=row["risk_signal"],
+                )
+                for row in _spider_rows("news_samples.csv")
+            ]
+        )
+
     session.commit()
     return {
         "brands": session.scalar(select(func.count()).select_from(BrandRecord)) or 0,
         "merchants": session.scalar(select(func.count()).select_from(MerchantRecord)) or 0,
         "contracts": session.scalar(select(func.count()).select_from(ContractRecord)) or 0,
         "public_opinions": session.scalar(select(func.count()).select_from(PublicOpinionRecord)) or 0,
+        "spider_brand_stats": session.scalar(select(func.count()).select_from(SpiderBrandStatRecord)) or 0,
+        "spider_city_stats": session.scalar(select(func.count()).select_from(SpiderCityStatRecord)) or 0,
+        "spider_news_samples": session.scalar(select(func.count()).select_from(SpiderNewsRecord)) or 0,
     }
 
 

@@ -63,3 +63,36 @@ class PublicOpinionRecord(Base):
     event_type: Mapped[str] = mapped_column(String(50))
     risk_level: Mapped[str] = mapped_column(String(30), index=True)
     summary: Mapped[str] = mapped_column(Text)
+
+
+class SpiderBrandStatRecord(Base):
+    __tablename__ = "spider_brand_stats"
+
+    brand_name: Mapped[str] = mapped_column(String(100), primary_key=True)
+    store_count: Mapped[int] = mapped_column(Integer)
+    news_count: Mapped[int] = mapped_column(Integer, default=0)
+    sample_risk_score: Mapped[float] = mapped_column(Float, default=0)
+    risk_level: Mapped[str] = mapped_column(String(30), index=True)
+    primary_signal: Mapped[str] = mapped_column(Text)
+
+
+class SpiderCityStatRecord(Base):
+    __tablename__ = "spider_city_stats"
+
+    city: Mapped[str] = mapped_column(String(50), primary_key=True)
+    store_count: Mapped[int] = mapped_column(Integer)
+    market_heat: Mapped[str] = mapped_column(String(30), index=True)
+    competition_level: Mapped[str] = mapped_column(String(30), index=True)
+    top_brands: Mapped[list[str]] = mapped_column(JSON, default=list)
+
+
+class SpiderNewsRecord(Base):
+    __tablename__ = "spider_news_samples"
+
+    news_id: Mapped[str] = mapped_column(String(30), primary_key=True)
+    brand_name: Mapped[str] = mapped_column(String(100), index=True)
+    title: Mapped[str] = mapped_column(String(240))
+    source: Mapped[str] = mapped_column(String(80))
+    published_at: Mapped[str] = mapped_column(String(30), index=True)
+    sentiment: Mapped[str] = mapped_column(String(30), index=True)
+    risk_signal: Mapped[str] = mapped_column(Text)
