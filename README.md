@@ -1,60 +1,49 @@
-# 基于 DeepSeek Skill 与 LangChain 的茶饮咖啡小微商户轻量化信贷风控与智能经营分析系统
+# 茶饮咖啡品牌投资与加盟风险智能分析系统
 
-本项目面向中小银行、村镇银行、消费金融公司、担保公司和小额贷款机构，以茶饮咖啡门店为典型小微经营主体，通过品牌信息、门店经营数据、成本压力、合同条款和舆情信号，生成可解释的七维风险评分、合同风险提示、DeepSeek 智能分析、授信辅助建议和贷后关注事项。
+本项目基于最新汇报方向，已由“茶饮咖啡小微商户信贷风控”调整为“茶饮咖啡品牌投资与加盟风险智能分析”。系统主要面向两类用户：
 
-系统用于课程项目演示和辅助分析，不直接替代征信核验、银行流水审查、现场尽调、人工审批或专业法律意见。
+1. 股民与普通投资者：查看茶饮咖啡品牌或关联股票的行情风险、新闻舆情、品牌扩张和投资关注点。
+2. 加盟意向用户：选择城市和品牌，分析当地加盟风险、门店密度、竞争品牌、市场热度和后续需要调查的数据。
+
+系统输出用于课程项目演示和辅助分析，不构成确定性投资建议、买卖建议或加盟承诺。
+
+## 当前版本完成内容
+
+- 前端首页已切换为品牌投资与加盟风险方向，保留深海军蓝、浅金色、冰川蓝灰和雪山主视觉风格。
+- 新增品牌搜索、地区筛选、品类筛选、风险等级筛选和使用场景筛选。
+- 新增投资风险指数、加盟风险指数、地区加盟环境、品牌样本卡和 Markdown 报告预览。
+- DeepSeek 分析改为手动点击触发，避免切换品牌时自动消耗 token。
+- 后端新增 `/api/brand-intel/*` 接口，旧信贷风控接口保留为 legacy，方便后续复用数据导入和评分代码。
+- 当前使用后端样例数据跑通主流程，后续等待 TS 补充真实行情、新闻、门店和加盟政策数据。
 
 ## 核心业务流程
 
 ```text
-品牌与商户数据
-  -> 数据清洗和字段标准化
-  -> 七维轻量化风控评分
-  -> 合同风险识别
-  -> DeepSeek 风险解释
-  -> 前端风控看板
-  -> Markdown / Word / PDF 风控报告
+品牌 / 行情 / 新闻 / 门店 / 加盟政策数据
+  -> 数据清洗与字段标准化
+  -> 品牌投资风险评分 + 地区加盟风险评分
+  -> 前端搜索筛选与地区分析
+  -> 用户手动触发 DeepSeek 智能解释
+  -> Markdown / Word / PDF 分析报告
 ```
 
-## 核心功能
+## 新版接口
 
-- 品牌信息库：品牌品类、价格带、门店规模、加盟成熟度、舆情与风险标签。
-- 商户经营档案：开店时长、客单价、月流水、外卖评分、成本比例、负债比例和竞品密度。
-- 七维风控评分：经营能力、财务压力、品牌稳定性、行业竞争、合同风险、舆情预警、渠道履约。
-- 合同智能审查：识别违约责任、保证金、加盟费用、采购付款、单方解除和争议解决等风险条款。
-- DeepSeek 智能分析：生成经营画像、品牌风险摘要、合同风险解释、授信辅助建议和贷后预警。
-- 风控看板：指标卡、高风险商户、风险等级分布和七维雷达图。
-- 报告生成：生成标准化小微商户信贷风控分析报告。
+| 接口 | 说明 |
+| --- | --- |
+| `GET /api/brand-intel/summary` | 获取品牌数量、上市关联数量、城市数量、新闻样本和风险分布 |
+| `GET /api/brand-intel/brands` | 获取品牌样本列表，支持 `keyword`、`city`、`category`、`risk_level`、`scenario` 筛选 |
+| `GET /api/brand-intel/brands/{brand_id}` | 获取单个品牌画像 |
+| `GET /api/brand-intel/region?city=杭州` | 获取地区加盟环境与竞品分析 |
+| `POST /api/brand-intel/ai/analyze` | 手动触发 AI 分析，输入品牌、城市和分析场景 |
+| `GET /api/brand-intel/reports/{brand_id}.md` | 获取 Markdown 分析报告 |
 
 ## 技术栈
 
-- 前端：React、TypeScript、Vite、Tailwind CSS、Lucide React、Framer Motion。
-- 后端：FastAPI、Pydantic v2、SQLAlchemy 2。
-- 数据库：开发期 SQLite，后续兼容 MySQL 8。
-- 大模型：DeepSeek API。
-- LLM 工程：LangChain / DeepSeek 结构化分析预留，当前采用压缩摘要 JSON + 本地规则兜底。
-- 测试：pytest、httpx。
-- 部署：Docker Compose、Nginx。
-
-## 项目结构
-
-```text
-backend/
-  app/
-    api/routes/          品牌、商户、评分、合同、报告、看板、TS数据、AI分析接口
-    core/                配置与基础能力
-    models/              Pydantic 领域模型
-    services/            评分、合同审查、报告生成服务
-data/
-  sample/                品牌、商户、合同、舆情样例数据
-  spider/                TS 爬虫聚合样例数据
-  dictionary/            风控指标字典
-docs/                    计划、架构、API 和项目策划案
-frontend/
-  src/                   React 风控看板
-skills/
-  deepseek_risk_analyst/ DeepSeek 风控分析 Skill
-```
+- 前端：React、TypeScript、Vite、Tailwind CSS、Lucide React、Framer Motion
+- 后端：FastAPI、Pydantic、SQLite、SQLAlchemy
+- AI：DeepSeek API，后续预留 LangChain / RAG / Agent 工具链
+- 数据：前期样例数据，后续导入 TS 整理的 CSV / JSON
 
 ## 快速启动
 
@@ -91,10 +80,16 @@ cmd /c npm run dev
 - Swagger：`http://127.0.0.1:8000/docs`
 - 健康检查：`http://127.0.0.1:8000/health`
 
-## 当前状态
+## 后续需要 TS 补充的数据
 
-当前仓库已具备 FastAPI/React 工程骨架、SQLite + SQLAlchemy 数据层、四类基础样例数据自动入库、TS 爬虫聚合样例数据入库、七维评分、合同规则审查、Markdown 报告、AI 风控解释接口和金融风控首页看板。DeepSeek 接口采用省 token 设计：后端先聚合数据，只把商户画像、评分结果和市场环境摘要 JSON 发送给模型；未配置密钥时使用本地规则兜底，保证演示稳定。
+| 数据类型 | 字段示例 | 用途 |
+| --- | --- | --- |
+| 行情数据 | 股票代码、价格、涨跌幅、成交量、市值、更新时间 | 投资风险评分 |
+| 新闻舆情 | 标题、来源、发布时间、情感倾向、关键词 | 舆情风险解释 |
+| 门店分布 | 城市、品牌、门店数、商圈密度、增长趋势 | 地区加盟风险 |
+| 加盟政策 | 加盟费、保证金、装修费、投资区间、回本周期 | 加盟成本评估 |
+| 地区竞争 | 城市、竞品品牌、竞品门店数、市场热度 | 区域竞争分析 |
 
-Day 2 数据库说明见 [docs/day2-database.md](docs/day2-database.md)。
+## Token 控制方案
 
-第二阶段数据与 AI 接入说明见 [docs/phase2-data-ai-integration.md](docs/phase2-data-ai-integration.md)。
+系统默认只使用规则评分和后端摘要展示结果。DeepSeek 分析必须由用户手动点击触发，后端只传品牌摘要、地区摘要和评分结果，不传大规模原始 CSV。后续可增加缓存机制，同一品牌、同一城市、同一天的分析结果优先读取缓存。

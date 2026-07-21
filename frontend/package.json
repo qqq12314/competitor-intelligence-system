@@ -1,6 +1,6 @@
 {
-  "name": "tea-coffee-credit-risk-dashboard",
-  "version": "0.4.0",
+  "name": "tea-coffee-brand-intel-dashboard",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {

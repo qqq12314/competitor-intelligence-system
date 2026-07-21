@@ -1,138 +1,80 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
 
-export interface DashboardHighRiskMerchant {
-  merchant_id: string
-  merchant_name: string
-  score: number
-  level: string
+export interface BrandMetric {
+  label: string
+  value: string
+  hint: string
 }
 
-export interface DashboardSummary {
-  brand_count: number
-  merchant_count: number
-  risk_distribution: Record<string, number>
-  contract_risk_count: number
-  opinion_risk_count: number
-  high_risk_merchants: DashboardHighRiskMerchant[]
-}
-
-export interface RiskDimensionScore {
-  dimension: string
-  score: number
-  explanation: string
-}
-
-export interface RiskAssessment {
-  merchant_id: string
-  merchant_name: string
-  total_score: number
-  risk_level: string
-  dimension_scores: RiskDimensionScore[]
-  main_risk_factors: string[]
-  business_strengths: string[]
-  credit_suggestion: string
-  post_loan_watchlist: string[]
-}
-
-export interface MerchantProfile {
-  merchant_id: string
-  merchant_name: string
-  brand_name: string
-  city: string
-  district: string
-  business_area_type: string
-  opening_months: number
-  average_ticket: number
-  takeaway_rating: number
-  monthly_revenue: number
-  rent_ratio: number
-  labor_cost_ratio: number
-  purchase_cost_ratio: number
-  debt_ratio: number
-  competitor_density: number
-  negative_review_keywords: string[]
-  franchise_type: string
-  has_contract_risk: boolean
-  recent_public_opinion_risk: boolean
-}
-
-export interface BrandProfile {
+export interface BrandIntelItem {
   brand_id: string
   brand_name: string
+  stock_name: string | null
+  stock_code: string | null
   category: string
+  headquarters: string
+  listed_status: string
+  key_cities: string[]
+  store_count: number
   price_band: string
-  store_scale: string
-  franchise_maturity: number
-  public_sentiment: string
+  sentiment_level: string
+  investment_risk_score: number
+  franchise_risk_score: number
+  risk_level: string
+  growth_signal: string
+  market_signal: string
+  franchise_signal: string
   risk_tags: string[]
+  metrics: BrandMetric[]
 }
 
-export interface SpiderBrandStat {
+export interface BrandIntelSummary {
+  brand_count: number
+  listed_brand_count: number
+  city_count: number
+  news_count: number
+  average_investment_risk: number
+  average_franchise_risk: number
+  risk_distribution: Record<string, number>
+  top_attention_brands: BrandIntelItem[]
+}
+
+export interface RegionBrandCard {
   brand_name: string
   store_count: number
-  news_count: number
-  sample_risk_score: number
-  risk_level: string
-  primary_signal: string
+  competition_pressure: string
+  franchise_fit: string
 }
 
-export interface SpiderCityStat {
+export interface RegionIntel {
   city: string
-  store_count: number
   market_heat: string
   competition_level: string
-  top_brands: string[]
-}
-
-export interface SpiderOverview {
-  brand_count: number
-  city_count: number
-  store_count: number
-  news_count: number
-  top_brands: SpiderBrandStat[]
-  top_cities: SpiderCityStat[]
-  missing_credit_fields: string[]
-  data_stage_note: string
-}
-
-export interface MerchantMarketContext {
-  merchant_id: string
-  merchant_name: string
-  city: string
-  brand_name: string
-  city_store_count: number | null
-  city_market_heat: string | null
-  city_competition_level: string | null
-  city_top_brands: string[]
-  brand_store_count: number | null
-  brand_news_count: number | null
-  brand_sample_risk_score: number | null
-  brand_risk_level: string | null
-  external_risk_signals: string[]
-  usage_note: string
-}
-
-export interface RegionRiskOverview {
-  city: string
-  merchant_count: number
-  high_attention_count: number
-  average_risk_score: number | null
-  city_store_count: number | null
-  market_heat: string | null
-  competition_level: string | null
-  top_brands: string[]
-  credit_policy_hint: string
-  follow_up_focus: string[]
-}
-
-export interface AIRiskExplanation {
-  source: 'deepseek' | 'local_rules' | string
-  summary: string
+  consumer_profile: string
+  store_density_index: number
+  franchise_risk_score: number
+  key_competitors: string[]
+  brand_cards: RegionBrandCard[]
+  opportunity_points: string[]
   risk_points: string[]
-  credit_suggestion: string
-  business_suggestions: string[]
+  follow_up_data: string[]
+}
+
+export interface BrandAIAnalysis {
+  source: string
+  summary: string
+  investment_view: string
+  franchise_view: string
+  risk_points: string[]
+  action_suggestions: string[]
   follow_up_data: string[]
   token_saving_note: string
+}
+
+export interface BrandAnalysisRequest {
+  brand_id: string
+  city?: string
+  scenario?: 'investment' | 'franchise' | 'mixed'
 }
 
 async function requestJson<T>(path: string, options?: RequestInit): Promise<T> {
@@ -151,74 +93,46 @@ async function requestJson<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
-async function requestText(path: string, options?: RequestInit): Promise<string> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers || {}),
-    },
-    ...options,
-  })
-
+async function requestText(path: string): Promise<string> {
+  const response = await fetch(`${API_BASE_URL}${path}`)
   if (!response.ok) {
     throw new Error(`API request failed: ${response.status}`)
   }
-
   return response.text()
 }
 
-export function fetchDashboardSummary() {
-  return requestJson<DashboardSummary>('/dashboard/summary')
+export function fetchBrandIntelSummary() {
+  return requestJson<BrandIntelSummary>('/brand-intel/summary')
 }
 
-export function fetchRiskAssessments() {
-  return requestJson<RiskAssessment[]>('/risk')
-}
-
-export function fetchBrands() {
-  return requestJson<BrandProfile[]>('/brands')
-}
-
-export function fetchMerchants() {
-  return requestJson<MerchantProfile[]>('/merchants')
-}
-
-export function searchMerchants(params: {
+export function fetchBrandIntelList(params: {
   keyword?: string
   city?: string
   risk_level?: string
   category?: string
+  scenario?: string
 }) {
   const query = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
     if (value) query.set(key, value)
   })
-  return requestJson<MerchantProfile[]>(`/merchants/search?${query.toString()}`)
+  const suffix = query.toString() ? `?${query.toString()}` : ''
+  return requestJson<BrandIntelItem[]>(`/brand-intel/brands${suffix}`)
 }
 
-export function fetchMerchantReport(merchantId: string) {
-  return requestText(`/reports/${merchantId}.md`)
+export function fetchRegionIntel(city?: string) {
+  const suffix = city ? `?city=${encodeURIComponent(city)}` : ''
+  return requestJson<RegionIntel>(`/brand-intel/region${suffix}`)
 }
 
-export function fetchSpiderOverview() {
-  return requestJson<SpiderOverview>('/spider/overview')
-}
-
-export function fetchMarketContext(merchantId: string) {
-  return requestJson<MerchantMarketContext>(`/spider/market-context/${merchantId}`)
-}
-
-export function fetchRegionRisk(city: string) {
-  return requestJson<RegionRiskOverview>(`/spider/region-risk/${encodeURIComponent(city)}`)
-}
-
-export function fetchAIRiskExplanation(merchantId: string) {
-  return requestJson<AIRiskExplanation>(`/ai/risk-explanation/${merchantId}`)
-}
-
-export function reviewContract(payload: unknown) {
-  return requestJson('/contracts/review', {
+export function fetchBrandAIAnalysis(payload: BrandAnalysisRequest) {
+  return requestJson<BrandAIAnalysis>('/brand-intel/ai/analyze', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
+}
+
+export function fetchBrandReport(brandId: string, city?: string) {
+  const suffix = city ? `?city=${encodeURIComponent(city)}` : ''
+  return requestText(`/brand-intel/reports/${brandId}.md${suffix}`)
 }

@@ -1,369 +1,123 @@
-import type {
-  AIRiskExplanation,
-  BrandProfile,
-  DashboardSummary,
-  MerchantMarketContext,
-  MerchantProfile,
-  RiskAssessment,
-  SpiderOverview,
-} from './api/client'
+import type { BrandAIAnalysis, BrandIntelItem, BrandIntelSummary, RegionIntel } from './api/client'
 
-export const MOCK_SUMMARY: DashboardSummary = {
-  brand_count: 6,
-  merchant_count: 24,
-  risk_distribution: {
-    低风险: 9,
-    中低风险: 7,
-    中风险: 5,
-    高风险: 3,
-  },
-  contract_risk_count: 6,
-  opinion_risk_count: 4,
-  high_risk_merchants: [
-    {
-      merchant_id: 'M-1004',
-      merchant_name: '北岸茶语·中央商场店',
-      score: 63.42,
-      level: '中风险',
-    },
-    {
-      merchant_id: 'M-1009',
-      merchant_name: '栖屿咖啡·青年路店',
-      score: 71.08,
-      level: '中低风险',
-    },
-  ],
-}
-
-export const MOCK_MERCHANTS: MerchantProfile[] = [
+export const MOCK_BRANDS: BrandIntelItem[] = [
   {
-    merchant_id: 'M-1004',
-    merchant_name: '北岸茶语·中央商场店',
-    brand_name: '北岸茶语',
-    city: '杭州',
-    district: '拱墅区',
-    business_area_type: '商场餐饮',
-    opening_months: 22,
-    average_ticket: 28,
-    takeaway_rating: 4.5,
-    monthly_revenue: 182000,
-    rent_ratio: 0.19,
-    labor_cost_ratio: 0.21,
-    purchase_cost_ratio: 0.34,
-    debt_ratio: 0.27,
-    competitor_density: 6,
-    negative_review_keywords: ['出杯慢', '排队长', '高峰波动'],
-    franchise_type: '成熟加盟',
-    has_contract_risk: true,
-    recent_public_opinion_risk: false,
-  },
-  {
-    merchant_id: 'M-1009',
-    merchant_name: '栖屿咖啡·青年路店',
-    brand_name: '栖屿咖啡',
-    city: '杭州',
-    district: '西湖区',
-    business_area_type: '社区街边',
-    opening_months: 15,
-    average_ticket: 35,
-    takeaway_rating: 4.7,
-    monthly_revenue: 146000,
-    rent_ratio: 0.16,
-    labor_cost_ratio: 0.18,
-    purchase_cost_ratio: 0.31,
-    debt_ratio: 0.22,
-    competitor_density: 4,
-    negative_review_keywords: ['新品转化一般'],
-    franchise_type: '区域加盟',
-    has_contract_risk: false,
-    recent_public_opinion_risk: false,
-  },
-  {
-    merchant_id: 'M-1016',
-    merchant_name: '糖澜奶茶·商圈旗舰店',
-    brand_name: '糖澜奶茶',
-    city: '宁波',
-    district: '鄞州区',
-    business_area_type: '商圈核心',
-    opening_months: 9,
-    average_ticket: 24,
-    takeaway_rating: 4.2,
-    monthly_revenue: 98000,
-    rent_ratio: 0.24,
-    labor_cost_ratio: 0.20,
-    purchase_cost_ratio: 0.35,
-    debt_ratio: 0.33,
-    competitor_density: 9,
-    negative_review_keywords: ['促销依赖', '客流波动', '门店拥挤'],
-    franchise_type: '新开加盟',
-    has_contract_risk: true,
-    recent_public_opinion_risk: true,
-  },
-  {
-    merchant_id: 'M-1021',
-    merchant_name: '焙野 Espresso Bar',
-    brand_name: '焙野咖啡',
-    city: '绍兴',
-    district: '越城区',
-    business_area_type: '写字楼商圈',
-    opening_months: 31,
-    average_ticket: 31,
-    takeaway_rating: 4.8,
-    monthly_revenue: 216000,
-    rent_ratio: 0.15,
-    labor_cost_ratio: 0.17,
-    purchase_cost_ratio: 0.29,
-    debt_ratio: 0.19,
-    competitor_density: 3,
-    negative_review_keywords: ['外卖峰值高'],
-    franchise_type: '成熟加盟',
-    has_contract_risk: false,
-    recent_public_opinion_risk: false,
-  },
-]
-
-export const MOCK_BRANDS: BrandProfile[] = [
-  {
-    brand_id: 'B-01',
-    brand_name: '北岸茶语',
-    category: '现代奶茶',
-    price_band: '20-30 元',
-    store_scale: '100+',
-    franchise_maturity: 4,
-    public_sentiment: '稳定',
-    risk_tags: ['高峰拥堵', '加盟成熟', '合同条款需核查'],
-  },
-  {
-    brand_id: 'B-02',
-    brand_name: '栖屿咖啡',
-    category: '精品咖啡',
-    price_band: '25-40 元',
-    store_scale: '60+',
-    franchise_maturity: 4,
-    public_sentiment: '偏正向',
-    risk_tags: ['复购稳定', '客单较高'],
-  },
-  {
-    brand_id: 'B-03',
-    brand_name: '糖澜奶茶',
-    category: '茶饮连锁',
-    price_band: '15-28 元',
-    store_scale: '80+',
-    franchise_maturity: 3,
-    public_sentiment: '波动',
-    risk_tags: ['促销依赖', '舆情波动'],
-  },
-  {
-    brand_id: 'B-04',
-    brand_name: '焙野咖啡',
-    category: '精品咖啡',
-    price_band: '22-38 元',
-    store_scale: '30+',
-    franchise_maturity: 5,
-    public_sentiment: '稳定',
-    risk_tags: ['区域成熟', '经营稳健'],
-  },
-]
-
-export const MOCK_ASSESSMENTS: RiskAssessment[] = [
-  {
-    merchant_id: 'M-1004',
-    merchant_name: '北岸茶语·中央商场店',
-    total_score: 63.42,
-    risk_level: '中风险',
-    dimension_scores: [
-      { dimension: '经营能力', score: 68, explanation: '商场客流较稳定，但高峰期波动明显。' },
-      { dimension: '财务压力', score: 55, explanation: '租金与采购成本占比偏高。' },
-      { dimension: '品牌稳定性', score: 74, explanation: '品牌成熟度较好。' },
-      { dimension: '行业竞争', score: 60, explanation: '周边奶茶品牌密度偏高。' },
-    ],
-    main_risk_factors: ['合同条款需复核', '客流峰值波动', '租金占比偏高'],
-    business_strengths: ['门店成熟度较高', '外卖评分稳定'],
-    credit_suggestion: '建议小额授信并设置月度回访。',
-    post_loan_watchlist: ['客流波动', '合同变更', '租金上浮'],
-  },
-  {
-    merchant_id: 'M-1009',
-    merchant_name: '栖屿咖啡·青年路店',
-    total_score: 71.08,
+    brand_id: 'luckin',
+    brand_name: '瑞幸咖啡',
+    stock_name: 'Luckin Coffee',
+    stock_code: 'LKNCY',
+    category: '咖啡',
+    headquarters: '厦门',
+    listed_status: '美股粉单市场',
+    key_cities: ['上海', '北京', '杭州', '广州', '成都'],
+    store_count: 20500,
+    price_band: '12-28 元',
+    sentiment_level: '偏正面',
+    investment_risk_score: 37.62,
+    franchise_risk_score: 41.8,
     risk_level: '中低风险',
-    dimension_scores: [
-      { dimension: '经营能力', score: 76, explanation: '门店稳定经营，周边客群清晰。' },
-      { dimension: '财务压力', score: 70, explanation: '成本结构健康。' },
-      { dimension: '品牌稳定性', score: 72, explanation: '品牌认可度较好。' },
-      { dimension: '行业竞争', score: 66, explanation: '社区竞争适中。' },
+    growth_signal: '门店规模领先，数字化运营能力强，适合持续跟踪行业景气度和单店效率。',
+    market_signal: '核心城市竞争激烈，但品牌认知度和价格带优势明显。',
+    franchise_signal: '联营与合作模式较成熟，加盟前仍需核实区域保护、选址和成本回收周期。',
+    risk_tags: ['高速扩张', '价格竞争', '咖啡刚需化'],
+    metrics: [
+      { label: '近端热度', value: '86', hint: 'NEWS + STORE' },
+      { label: '舆情倾向', value: '偏正面', hint: 'PUBLIC SENTIMENT' },
+      { label: '加盟关注', value: '较高', hint: 'FRANCHISE' },
     ],
-    main_risk_factors: ['新品转化慢'],
-    business_strengths: ['复购稳定', '客单较高', '毛利空间较好'],
-    credit_suggestion: '可进入标准授信流程。',
-    post_loan_watchlist: ['新品销售占比', '平台评分'],
   },
   {
-    merchant_id: 'M-1016',
-    merchant_name: '糖澜奶茶·商圈旗舰店',
-    total_score: 54.86,
-    risk_level: '高风险',
-    dimension_scores: [
-      { dimension: '经营能力', score: 51, explanation: '客流波动较大。' },
-      { dimension: '财务压力', score: 44, explanation: '租金和债务压力偏高。' },
-      { dimension: '品牌稳定性', score: 60, explanation: '品牌仍在快速扩张。' },
-      { dimension: '行业竞争', score: 42, explanation: '商圈内竞争密度较高。' },
+    brand_id: 'mixue',
+    brand_name: '蜜雪冰城',
+    stock_name: '蜜雪集团',
+    stock_code: '02097.HK',
+    category: '茶饮',
+    headquarters: '郑州',
+    listed_status: '港股上市',
+    key_cities: ['郑州', '广州', '成都', '武汉', '杭州'],
+    store_count: 36000,
+    price_band: '4-12 元',
+    sentiment_level: '中性偏正面',
+    investment_risk_score: 45.2,
+    franchise_risk_score: 52.6,
+    risk_level: '中风险',
+    growth_signal: '下沉市场覆盖强，供应链规模优势明显，需关注门店密度和同质化竞争。',
+    market_signal: '低价茶饮需求稳定，但区域饱和度上升。',
+    franchise_signal: '加盟体系成熟，风险主要来自商圈重叠、利润空间和门店密度。',
+    risk_tags: ['门店密度高', '低价竞争', '供应链优势'],
+    metrics: [
+      { label: '近端热度', value: '91', hint: 'NEWS + STORE' },
+      { label: '舆情倾向', value: '中性', hint: 'PUBLIC SENTIMENT' },
+      { label: '加盟关注', value: '高', hint: 'FRANCHISE' },
     ],
-    main_risk_factors: ['高峰拥挤', '促销依赖', '舆情波动'],
-    business_strengths: ['单店销售额仍可观'],
-    credit_suggestion: '建议补充材料后再审慎评估。',
-    post_loan_watchlist: ['舆情', '门店客流', '租金'],
+  },
+  {
+    brand_id: 'chagee',
+    brand_name: '霸王茶姬',
+    stock_name: 'CHAGEE',
+    stock_code: 'CHA',
+    category: '茶饮',
+    headquarters: '昆明',
+    listed_status: '美股上市',
+    key_cities: ['上海', '杭州', '成都', '深圳', '广州'],
+    store_count: 6400,
+    price_band: '15-28 元',
+    sentiment_level: '高热度',
+    investment_risk_score: 51.8,
+    franchise_risk_score: 48.7,
+    risk_level: '中风险',
+    growth_signal: '品牌增长快，东方茶饮定位清晰，需关注上市后业绩兑现和舆情波动。',
+    market_signal: '新中式茶饮热度高，核心商圈竞争同步加剧。',
+    franchise_signal: '扩张速度快，加盟前要重点核实城市容量、选址质量和品牌政策。',
+    risk_tags: ['高速增长', '舆情敏感', '新中式茶饮'],
+    metrics: [
+      { label: '近端热度', value: '94', hint: 'NEWS + STORE' },
+      { label: '舆情倾向', value: '高热度', hint: 'PUBLIC SENTIMENT' },
+      { label: '加盟关注', value: '较高', hint: 'FRANCHISE' },
+    ],
   },
 ]
 
-export const MOCK_REPORTS: Record<string, string> = {
-  'M-1004': `# 北岸茶语·中央商场店 风险报告
-
-- 风险等级：中风险
-- 重点关注：合同条款、租金占比、客流波动
-
-## 核心结论
-
-该门店经营稳定，但商场场景对高峰动线和租金成本较敏感，适合小额授信并加强月度回访。
-
-## 建议
-
-1. 控制授信额度。
-2. 继续观察合同条款与租金变动。
-3. 跟踪平台评分与到店客流。
-`,
-  'M-1009': `# 栖屿咖啡·青年路店 风险报告
-
-- 风险等级：中低风险
-- 重点关注：新品转化率、外卖波动
-
-## 核心结论
-
-门店经营能力较稳，财务结构健康，可以作为标准授信样本。
-
-## 建议
-
-1. 保持常规授信流程。
-2. 关注新品转化和复购表现。
-3. 继续跟踪平台评分。
-`,
-  'M-1016': `# 糖澜奶茶·商圈旗舰店 风险报告
-
-- 风险等级：高风险
-- 重点关注：客流波动、促销依赖、舆情风险
-
-## 核心结论
-
-该门店在高竞争商圈内承压较明显，建议先补充材料并延迟授信。
-
-## 建议
-
-1. 补充租赁、流水与还款材料。
-2. 加强合同和舆情核查。
-3. 暂缓扩大授信。
-`,
-  'M-1021': `# 焙野 Espresso Bar 风险报告
-
-- 风险等级：低风险
-- 重点关注：外卖峰值和运营节奏
-
-## 核心结论
-
-该门店经营稳健，适合作为轻量化授信的正向样本。
-
-## 建议
-
-1. 可纳入标准授信池。
-2. 保持正常贷后跟踪。
-3. 关注高峰期履约稳定性。
-`,
+export const MOCK_SUMMARY: BrandIntelSummary = {
+  brand_count: 6,
+  listed_brand_count: 4,
+  city_count: 9,
+  news_count: 186,
+  average_investment_risk: 49.19,
+  average_franchise_risk: 50.3,
+  risk_distribution: {
+    中低风险: 2,
+    中风险: 2,
+    较高风险: 2,
+  },
+  top_attention_brands: MOCK_BRANDS,
 }
 
-export const MOCK_SPIDER_OVERVIEW: SpiderOverview = {
-  brand_count: 10,
-  city_count: 10,
-  store_count: 24986,
-  news_count: 290,
-  top_brands: [
-    {
-      brand_name: '蜜雪冰城',
-      store_count: 4719,
-      news_count: 31,
-      sample_risk_score: 63.4,
-      risk_level: '中风险',
-      primary_signal: '门店规模大且加盟密度高，适合观察区域竞争和价格带压力',
-    },
-    {
-      brand_name: '瑞幸咖啡',
-      store_count: 4434,
-      news_count: 42,
-      sample_risk_score: 58.8,
-      risk_level: '中低风险',
-      primary_signal: '品牌数字化能力强，但核心城市咖啡竞争密度高',
-    },
-    {
-      brand_name: '库迪咖啡',
-      store_count: 4422,
-      news_count: 38,
-      sample_risk_score: 66.2,
-      risk_level: '中风险',
-      primary_signal: '扩张速度快，需关注促销依赖与单店稳定性',
-    },
+export const MOCK_REGION: RegionIntel = {
+  city: '杭州',
+  market_heat: '高活跃',
+  competition_level: '高竞争',
+  consumer_profile: '年轻客群和互联网办公场景集中，咖啡与新茶饮接受度高。',
+  store_density_index: 81.2,
+  franchise_risk_score: 52.7,
+  key_competitors: ['瑞幸咖啡', '库迪咖啡', '星巴克', '霸王茶姬'],
+  brand_cards: [
+    { brand_name: '瑞幸咖啡', store_count: 860, competition_pressure: '高', franchise_fit: '关注点位差异' },
+    { brand_name: '库迪咖啡', store_count: 610, competition_pressure: '中高', franchise_fit: '谨慎测算回本' },
+    { brand_name: '霸王茶姬', store_count: 330, competition_pressure: '中', franchise_fit: '可关注新兴商圈' },
   ],
-  top_cities: [
-    {
-      city: '杭州市',
-      store_count: 2890,
-      market_heat: '高活跃',
-      competition_level: '高竞争',
-      top_brands: ['瑞幸咖啡', '库迪咖啡', '星巴克'],
-    },
-    {
-      city: '上海市',
-      store_count: 2743,
-      market_heat: '高活跃',
-      competition_level: '高竞争',
-      top_brands: ['星巴克', '瑞幸咖啡', '霸王茶姬'],
-    },
-    {
-      city: '广州市',
-      store_count: 2718,
-      market_heat: '高活跃',
-      competition_level: '高竞争',
-      top_brands: ['蜜雪冰城', '茶百道', '喜茶'],
-    },
-  ],
-  missing_credit_fields: ['近6个月营业流水', '月订单量与客单价明细', '会员复购率', '房租、人工、原料成本', '现有负债与贷款申请金额', '合同原文'],
-  data_stage_note: '当前 TS 数据用于外部经营环境评估；真实授信仍需补充商户流水、成本、负债和合同原文。',
+  opportunity_points: ['年轻消费力强', '办公楼与社区复合场景多', '数字化运营适配度高'],
+  risk_points: ['咖啡价格战明显', '热门商圈门店拥挤', '品牌重叠度高'],
+  follow_up_data: ['商圈客流分时段数据', '竞品活动频率', '外卖平台销量', '加盟费用明细'],
 }
 
-export const MOCK_MARKET_CONTEXT: MerchantMarketContext = {
-  merchant_id: 'M-1004',
-  merchant_name: '北屿茶语·中央商场店',
-  city: '杭州市',
-  brand_name: '北屿茶语',
-  city_store_count: 2890,
-  city_market_heat: '高活跃',
-  city_competition_level: '高竞争',
-  city_top_brands: ['瑞幸咖啡', '库迪咖啡', '星巴克'],
-  brand_store_count: null,
-  brand_news_count: null,
-  brand_sample_risk_score: null,
-  brand_risk_level: null,
-  external_risk_signals: [
-    '杭州市门店样本数约2890，市场热度为高活跃。',
-    '城市竞争水平：高竞争，主要品牌包括瑞幸咖啡、库迪咖啡、星巴克。',
-    '当前 TS 聚合数据暂未匹配该品牌，前期按独立/区域品牌审慎处理。',
-  ],
-  usage_note: '该市场环境只作为外部辅助指标，不直接替代商户真实信贷资料和人工审批。',
-}
-
-export const MOCK_AI_EXPLANATION: AIRiskExplanation = {
+export const MOCK_AI_ANALYSIS: BrandAIAnalysis = {
   source: 'local_rules',
-  summary: '该商户综合风险处于中等区间。结合 TS 公开经营环境数据，当前判断重点应放在现金流真实性、区域竞争压力和合同稳定性。',
-  risk_points: ['区域同类门店密度较高，存在客流分流压力。', '租金占比偏高，现金流安全垫需要复核。', '合同条款存在潜在经营约束。'],
-  credit_suggestion: '建议审慎授信，控制额度并设置月度经营数据回访。',
-  business_suggestions: ['补充近6个月流水和平台订单截图。', '结合商圈竞品密度调整授信额度。', '将租赁合同剩余期限纳入贷前复核。'],
-  follow_up_data: ['近6个月收款流水', '平台订单与复购数据', '租赁合同及剩余租期', '现有负债和贷款用途'],
-  token_saving_note: '本结果未发送原始 CSV，仅使用后端聚合后的商户画像、评分结果和市场环境摘要。',
+  summary: '瑞幸咖啡适合从投资风险和加盟风险两个角度综合观察。该品牌属于咖啡，当前风险等级为中低风险，系统本次仅基于后端聚合摘要生成解释。',
+  investment_view: '当前投资风险指数为 37.62，品牌规模和数字化能力较强，但仍需要跟踪行情波动、财报和行业价格竞争。',
+  franchise_view: '在杭州场景下，地区加盟风险指数为 52.70，市场热度较高，加盟前应重点核实商圈租金、竞品密度和区域保护政策。',
+  risk_points: ['高速扩张', '价格竞争', '核心商圈租金高', '同类品牌密度高'],
+  action_suggestions: ['股民侧重点跟踪行情、财报和负面新闻。', '加盟侧重点比较门店密度、租金成本和竞品数量。'],
+  follow_up_data: ['近 30 至 90 天行情数据', '近 10 条品牌新闻', '目标城市门店与竞品数量', '加盟费用和回本周期'],
+  token_saving_note: '本接口采用手动触发，只向模型传递品牌摘要、地区摘要和评分结果；列表切换不会自动调用 DeepSeek。',
 }

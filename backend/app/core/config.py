@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "茶饮咖啡小微商户轻量化信贷风控与智能经营分析系统"
+    app_name: str = "茶饮咖啡品牌投资与加盟风险智能分析系统"
     app_env: str = "development"
     database_url: str = "sqlite:///./tea_coffee_risk.db"
 
