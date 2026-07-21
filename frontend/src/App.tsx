@@ -395,6 +395,16 @@ function BrandDetail({ brand }: { brand: BrandIntelItem | null }) {
     )
   }
 
+  const quoteRows = [
+    ['市场', brand.quote?.market || brand.listed_status],
+    ['当前价', brand.quote?.current_price ? `${brand.quote.current_price} ${brand.quote.currency || ''}` : '暂无行情'],
+    ['涨跌幅', brand.quote?.change_percent ? `${brand.quote.change_percent}%` : '暂无'],
+    ['市值', brand.quote?.market_cap || '暂无'],
+  ]
+  const policy = brand.franchise_policy
+  const news = brand.news || []
+  const competition = brand.region_competition || []
+
   return (
     <section className="rounded-[20px] border border-line/85 bg-white p-6 shadow-soft">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -447,6 +457,105 @@ function BrandDetail({ brand }: { brand: BrandIntelItem | null }) {
               </span>
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-5 xl:grid-cols-[0.82fr_1.18fr]">
+        <div className="rounded-2xl border border-line bg-[#FAFCFF] p-5">
+          <div className="mb-4 flex items-center gap-2 text-sm font-bold text-ink">
+            <TrendingUp className="h-5 w-5 text-champagne" />
+            行情摘要
+          </div>
+          <div className="space-y-3">
+            {quoteRows.map(([label, value]) => (
+              <div key={label} className="flex items-center justify-between gap-4 rounded-xl bg-white px-3 py-2 text-sm">
+                <span className="text-copy">{label}</span>
+                <span className="font-bold text-ink">{value}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs leading-6 text-copy">用于股民投资风险分析，后续 TS 可替换为真实行情接口或历史行情 CSV。</p>
+        </div>
+
+        <div className="rounded-2xl border border-line bg-[#FAFCFF] p-5">
+          <div className="mb-4 flex items-center gap-2 text-sm font-bold text-ink">
+            <Activity className="h-5 w-5 text-champagne" />
+            新闻舆情样本
+          </div>
+          <div className="space-y-3">
+            {(news.length ? news : []).slice(0, 3).map((item) => (
+              <div key={`${item.publish_date}-${item.title}`} className="rounded-xl bg-white p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-bold text-ocean">{item.publish_date}</span>
+                  <span className={`rounded-lg px-2 py-0.5 text-[11px] font-bold ${item.sentiment === 'negative' ? 'bg-rose-50 text-rose-700' : item.sentiment === 'positive' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-copy'}`}>
+                    {item.sentiment}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm font-bold text-ink">{item.title}</p>
+                <p className="mt-1 text-xs leading-5 text-copy">{item.risk_signal}</p>
+              </div>
+            ))}
+            {!news.length && <p className="text-sm text-copy">暂无新闻样本，等待 TS 补充 news_sentiment.csv。</p>}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-5 xl:grid-cols-2">
+        <div className="rounded-2xl border border-line bg-[#FAFCFF] p-5">
+          <div className="mb-4 flex items-center gap-2 text-sm font-bold text-ink">
+            <Building2 className="h-5 w-5 text-champagne" />
+            加盟政策摘要
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl bg-white p-3">
+              <p className="text-xs text-copy">是否开放加盟</p>
+              <p className="mt-1 font-bold text-ink">{policy?.is_franchise_available === false ? '否' : policy?.is_franchise_available === true ? '是' : '待核实'}</p>
+            </div>
+            <div className="rounded-xl bg-white p-3">
+              <p className="text-xs text-copy">总投资区间</p>
+              <p className="mt-1 font-bold text-ink">{policy?.total_investment_range || '待核实'}</p>
+            </div>
+            <div className="rounded-xl bg-white p-3">
+              <p className="text-xs text-copy">预计回本周期</p>
+              <p className="mt-1 font-bold text-ink">{policy?.estimated_payback_period || '待核实'}</p>
+            </div>
+            <div className="rounded-xl bg-white p-3">
+              <p className="text-xs text-copy">区域保护</p>
+              <p className="mt-1 font-bold text-ink">{policy?.area_protection_policy || '待核实'}</p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs leading-6 text-copy">{policy?.note || '公开资料有限，后续需要继续核实官方招商政策。'}</p>
+        </div>
+
+        <div className="rounded-2xl border border-line bg-[#FAFCFF] p-5">
+          <div className="mb-4 flex items-center gap-2 text-sm font-bold text-ink">
+            <MapPin className="h-5 w-5 text-champagne" />
+            地区竞争信号
+          </div>
+          <div className="space-y-3">
+            {competition.slice(0, 3).map((item) => (
+              <div key={`${item.city}-${item.target_brand}`} className="rounded-xl bg-white p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-bold text-ink">{item.city}</p>
+                  <span className="rounded-lg bg-[#FFFDF8] px-2 py-1 text-xs font-bold text-champagne">{item.competition_level || '待评估'}</span>
+                </div>
+                <p className="mt-2 text-xs leading-5 text-copy">主要竞品：{item.major_competitors.join('、') || '待补充'}</p>
+                <p className="mt-1 text-xs leading-5 text-copy">{item.risk_points || '等待地区竞争数据。'}</p>
+              </div>
+            ))}
+            {!competition.length && <p className="text-sm text-copy">暂无地区竞争样本，等待 TS 补充 region_competition.csv。</p>}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-line bg-[#FAFCFF] p-5">
+        <p className="text-sm font-bold text-ink">后续调查建议</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {(brand.follow_up_data || []).map((item) => (
+            <span key={item} className="rounded-lg border border-line bg-white px-3 py-1 text-xs font-semibold text-copy">
+              {item}
+            </span>
+          ))}
         </div>
       </div>
     </section>
@@ -554,7 +663,10 @@ function AIAnalysisPanel({
             <SignalList title="加盟分析" items={[analysis.franchise_view]} />
           </div>
           <SignalList title="行动建议" items={analysis.action_suggestions} />
-          <p className="text-xs leading-6 text-copy">{analysis.token_saving_note}</p>
+          <p className="text-xs leading-6 text-copy">
+            {analysis.token_saving_note}
+            {analysis.cache_hit ? ' 当前结果来自缓存。' : ' 当前结果为本次生成并已写入缓存。'}
+          </p>
         </div>
       )}
     </section>

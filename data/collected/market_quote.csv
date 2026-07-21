@@ -1,0 +1,7 @@
+brand_name,company_name,stock_code,market,current_price,change_amount,change_percent,volume,turnover,market_cap,pe_ratio,currency,trade_date,source_name,source_url,query_date,note
+瑞幸咖啡,Luckin Coffee Inc.,LKNCY,US OTC,37.62,0.86,2.34,1289000,48490000,10400000000,28.4,USD,2026-07-21,公开行情样例,https://www.otcmarkets.com/,2026-07-21,演示行情数据，后续替换为真实接口结果
+蜜雪冰城,蜜雪集团,02097.HK,HK,402.00,-4.20,-1.03,2860000,1150000000,155000000000,35.2,HKD,2026-07-21,公开行情样例,https://www.hkex.com.hk/,2026-07-21,演示行情数据，后续替换为真实接口结果
+星巴克,Starbucks Corporation,SBUX,NASDAQ,92.45,1.12,1.23,9180000,846000000,104900000000,29.8,USD,2026-07-21,公开行情样例,https://www.nasdaq.com/,2026-07-21,演示行情数据，后续替换为真实接口结果
+霸王茶姬,CHAGEE Holdings,CHA,NASDAQ,31.28,-0.46,-1.45,1840000,57500000,6300000000,42.1,USD,2026-07-21,公开行情样例,https://www.nasdaq.com/,2026-07-21,演示行情数据，后续替换为真实接口结果
+奈雪的茶,奈雪的茶控股有限公司,02150.HK,HK,1.98,-0.08,-3.88,11200000,22200000,3400000000,,HKD,2026-07-21,公开行情样例,https://www.hkex.com.hk/,2026-07-21,演示行情数据，后续替换为真实接口结果
+库迪咖啡,库迪咖啡,,未上市,,,,,,,,,2026-07-21,公开资料整理,,2026-07-21,未上市品牌，无公开股票行情

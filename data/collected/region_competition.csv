@@ -1,0 +1,7 @@
+city,target_brand,category,target_brand_store_count,same_category_store_count,major_competitors,competitor_count,store_density_level,competition_level,market_heat,opportunity_points,risk_points,query_date
+杭州,瑞幸咖啡,咖啡,860,1830,"库迪咖啡;星巴克;Manner",3,high,high,high,办公与互联网场景集中，咖啡消费频次高,价格竞争明显且热门商圈门店密度高,2026-07-21
+杭州,霸王茶姬,茶饮,330,980,"茶百道;古茗;喜茶",3,medium_high,medium_high,high,年轻客群集中，新中式茶饮接受度高,核心商圈租金高且竞品重叠,2026-07-21
+上海,瑞幸咖啡,咖啡,1250,2460,"星巴克;Manner;库迪咖啡",3,high,high,high,咖啡消费成熟，办公商圈密集,成熟市场竞争强且获客成本高,2026-07-21
+上海,星巴克,咖啡,980,2460,"瑞幸咖啡;Manner;库迪咖啡",3,high,high,high,品牌认知稳定，高端客群仍有基础,本土平价咖啡挤压增长空间,2026-07-21
+成都,蜜雪冰城,茶饮,980,2100,"茶百道;古茗;书亦烧仙草",3,high,medium_high,medium_high,休闲消费氛围强，下沉与社区场景多,低价茶饮密度较高且利润空间需测算,2026-07-21
+成都,瑞幸咖啡,咖啡,460,980,"库迪咖啡;星巴克;Manner",3,medium,medium,medium_high,咖啡消费增长快，办公点位仍有空间,咖啡习惯仍在培育且价格竞争持续,2026-07-21

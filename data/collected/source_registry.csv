@@ -1,0 +1,6 @@
+source_id,source_name,source_type,source_url,data_tables_used,credibility_level,update_frequency,access_method,legal_note,query_date
+SRC001,品牌官网,official_website,https://www.lkcoffee.com/,"brand_profile;franchise_policy",high,manual,html,公开官网信息，需按页面条款低频访问,2026-07-21
+SRC002,交易所与公开行情平台,financial_platform,https://www.hkex.com.hk/,"market_quote;historical_quote;financial_metrics",high,daily,api_or_html,公开行情数据，演示阶段使用样例，后续替换真实采集,2026-07-21
+SRC003,财经新闻公开页面,news_media,https://example.com/news,"news_sentiment;risk_event;industry_trend",medium,daily,html,公开新闻摘要，不采集付费和登录内容,2026-07-21
+SRC004,地图或门店公开检索,map_platform,https://example.com/map,"city_store_distribution;region_competition",medium,weekly,manual_or_api,低频采集城市级统计，不采集用户隐私,2026-07-21
+SRC005,第三方加盟信息平台,third_party,https://example.com/franchise,franchise_policy,low,monthly,html,第三方加盟信息需进一步核实，不用于收益承诺,2026-07-21

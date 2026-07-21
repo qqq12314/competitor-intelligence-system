@@ -6,6 +6,53 @@ export interface BrandMetric {
   hint: string
 }
 
+export interface MarketQuote {
+  stock_code: string | null
+  market: string | null
+  current_price: string | null
+  change_percent: string | null
+  volume: string | null
+  market_cap: string | null
+  pe_ratio: string | null
+  currency: string | null
+  trade_date: string | null
+  source_url: string | null
+}
+
+export interface NewsSignal {
+  title: string
+  source_name: string
+  publish_date: string
+  sentiment: string
+  news_type: string
+  summary: string
+  risk_signal: string
+  news_url: string | null
+}
+
+export interface FranchisePolicy {
+  is_franchise_available: boolean | null
+  franchise_fee: string | null
+  deposit: string | null
+  total_investment_range: string | null
+  estimated_payback_period: string | null
+  area_protection_policy: string | null
+  franchise_conditions: string | null
+  source_url: string | null
+  note: string | null
+}
+
+export interface RegionCompetitionSignal {
+  city: string
+  target_brand: string
+  same_category_store_count: number | null
+  major_competitors: string[]
+  competition_level: string | null
+  market_heat: string | null
+  opportunity_points: string | null
+  risk_points: string | null
+}
+
 export interface BrandIntelItem {
   brand_id: string
   brand_name: string
@@ -26,6 +73,11 @@ export interface BrandIntelItem {
   franchise_signal: string
   risk_tags: string[]
   metrics: BrandMetric[]
+  quote?: MarketQuote | null
+  news?: NewsSignal[]
+  franchise_policy?: FranchisePolicy | null
+  region_competition?: RegionCompetitionSignal[]
+  follow_up_data?: string[]
 }
 
 export interface BrandIntelSummary {
@@ -69,6 +121,7 @@ export interface BrandAIAnalysis {
   action_suggestions: string[]
   follow_up_data: string[]
   token_saving_note: string
+  cache_hit?: boolean
 }
 
 export interface BrandAnalysisRequest {

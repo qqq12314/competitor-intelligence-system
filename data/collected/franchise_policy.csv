@@ -1,0 +1,7 @@
+brand_name,is_franchise_available,franchise_fee,deposit,decoration_cost,equipment_cost,first_material_cost,total_investment_range,estimated_payback_period,area_protection_policy,franchise_conditions,source_name,source_url,query_date,note
+瑞幸咖啡,true,未知,未知,未知,未知,未知,公开资料未统一披露,未知,需核实,需满足品牌合作门店要求,公开招商样例,https://example.com/luckin-franchise,2026-07-21,演示字段，后续以官方资料为准
+蜜雪冰城,true,3-5 万元,1-2 万元,10-20 万元,8-15 万元,2-5 万元,30-60 万元,12-24 个月,有区域规则,需符合门店面积和经营资质要求,公开招商样例,https://example.com/mixue-franchise,2026-07-21,第三方资料，需进一步核实
+星巴克,false,,,,,,,,直营为主,中国市场普通加盟机会有限,公开资料整理,https://www.starbucks.com.cn/,2026-07-21,直营为主，作为竞品参考
+霸王茶姬,true,未知,未知,未知,未知,未知,公开资料未统一披露,未知,需核实,需满足品牌招商政策,公开招商样例,https://example.com/chagee-franchise,2026-07-21,演示字段，后续以官方招商资料为准
+奈雪的茶,true,未知,未知,未知,未知,未知,公开资料未统一披露,未知,需核实,需核实加盟政策和门店模型,公开资料整理,https://www.naixue.com/,2026-07-21,演示字段，需进一步核实
+库迪咖啡,true,未知,未知,未知,未知,未知,公开资料未统一披露,未知,需核实,需核实补贴和回本周期,公开招商样例,https://example.com/cotti-franchise,2026-07-21,第三方资料，需进一步核实

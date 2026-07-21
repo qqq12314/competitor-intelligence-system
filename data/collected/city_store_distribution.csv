@@ -1,0 +1,11 @@
+city,brand_name,category,store_count_estimate,store_count_source_type,major_districts,source_name,source_url,query_date,note
+杭州,瑞幸咖啡,咖啡,860,estimate,"西湖区;滨江区;上城区",公开门店样例,https://example.com/hangzhou-luckin,2026-07-21,演示估算，后续由地图或官网数据核实
+杭州,库迪咖啡,咖啡,610,estimate,"西湖区;拱墅区;滨江区",公开门店样例,https://example.com/hangzhou-cotti,2026-07-21,演示估算
+杭州,星巴克,咖啡,360,estimate,"西湖区;上城区;滨江区",公开门店样例,https://example.com/hangzhou-starbucks,2026-07-21,演示估算
+杭州,霸王茶姬,茶饮,330,estimate,"西湖区;上城区;萧山区",公开门店样例,https://example.com/hangzhou-chagee,2026-07-21,演示估算
+上海,瑞幸咖啡,咖啡,1250,estimate,"浦东新区;徐汇区;静安区",公开门店样例,https://example.com/shanghai-luckin,2026-07-21,演示估算
+上海,星巴克,咖啡,980,estimate,"浦东新区;黄浦区;静安区",公开门店样例,https://example.com/shanghai-starbucks,2026-07-21,演示估算
+上海,霸王茶姬,茶饮,420,estimate,"浦东新区;徐汇区;闵行区",公开门店样例,https://example.com/shanghai-chagee,2026-07-21,演示估算
+成都,蜜雪冰城,茶饮,980,estimate,"锦江区;武侯区;成华区",公开门店样例,https://example.com/chengdu-mixue,2026-07-21,演示估算
+成都,茶百道,茶饮,520,estimate,"锦江区;武侯区;高新区",公开门店样例,https://example.com/chengdu-chabaidao,2026-07-21,演示估算
+成都,瑞幸咖啡,咖啡,460,estimate,"锦江区;高新区;武侯区",公开门店样例,https://example.com/chengdu-luckin,2026-07-21,演示估算

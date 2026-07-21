@@ -1,0 +1,11 @@
+brand_name,news_title,source_name,publish_date,news_url,news_summary,sentiment,news_type,keywords,risk_signal,query_date
+瑞幸咖啡,瑞幸咖啡继续推进门店扩张,公开新闻样例,2026-07-18,https://example.com/luckin-store-growth,门店增长继续保持较高速度,positive,store_expansion,"扩张;门店;咖啡",扩张提升规模优势但也需要关注单店效率,2026-07-21
+瑞幸咖啡,咖啡品牌价格竞争持续,公开新闻样例,2026-07-12,https://example.com/coffee-price-war,多家咖啡品牌延续优惠活动,negative,price_war,"价格战;补贴;竞争",价格竞争可能压缩利润空间,2026-07-21
+蜜雪冰城,蜜雪集团上市后关注门店密度,公开新闻样例,2026-07-10,https://example.com/mixue-density,投资者关注下沉市场门店饱和度,neutral,listing,"上市;门店密度;下沉市场",高门店密度可能影响加盟回本预期,2026-07-21
+蜜雪冰城,供应链优势支撑低价策略,公开新闻样例,2026-07-06,https://example.com/mixue-supply-chain,供应链规模优势被多家媒体关注,positive,industry_trend,"供应链;低价;规模",供应链优势有助于维持成本竞争力,2026-07-21
+星巴克,星巴克中国市场面对本土品牌竞争,公开新闻样例,2026-07-08,https://example.com/starbucks-competition,高端咖啡品牌面临本土平价咖啡挑战,neutral,industry_trend,"本土竞争;咖啡;高端",竞争加剧可能影响同店增长,2026-07-21
+霸王茶姬,新中式茶饮热度持续提升,公开新闻样例,2026-07-15,https://example.com/chagee-growth,新中式茶饮品牌继续受到市场关注,positive,store_expansion,"新中式茶饮;增长;品牌热度",高热度利于品牌增长但估值兑现压力上升,2026-07-21
+霸王茶姬,热门品牌舆情波动引发讨论,公开新闻样例,2026-07-02,https://example.com/chagee-opinion,部分消费者讨论产品和排队体验,negative,public_opinion,"舆情;体验;排队",舆情波动可能影响短期品牌口碑,2026-07-21
+奈雪的茶,奈雪的茶持续推进门店模型调整,公开新闻样例,2026-06-29,https://example.com/nayuki-store-model,品牌继续优化门店模型和成本结构,neutral,financial_report,"门店模型;成本;盈利",转型效果仍需财务数据验证,2026-07-21
+奈雪的茶,高端茶饮价格带承压,公开新闻样例,2026-06-21,https://example.com/premium-tea-pressure,高端现制茶饮受平价品牌竞争影响,negative,price_war,"高端茶饮;价格带;竞争",价格带承压可能影响投资信心和加盟收益预期,2026-07-21
+库迪咖啡,库迪咖啡继续推进低价促销,公开新闻样例,2026-07-04,https://example.com/cotti-promotion,库迪保持高频优惠和扩张节奏,neutral,price_war,"促销;扩张;咖啡",促销可带来客流但回本周期存在不确定性,2026-07-21

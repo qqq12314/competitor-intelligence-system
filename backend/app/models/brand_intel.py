@@ -1,10 +1,57 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class BrandMetric(BaseModel):
     label: str
     value: str
     hint: str
+
+
+class MarketQuote(BaseModel):
+    stock_code: str | None = None
+    market: str | None = None
+    current_price: str | None = None
+    change_percent: str | None = None
+    volume: str | None = None
+    market_cap: str | None = None
+    pe_ratio: str | None = None
+    currency: str | None = None
+    trade_date: str | None = None
+    source_url: str | None = None
+
+
+class NewsSignal(BaseModel):
+    title: str
+    source_name: str
+    publish_date: str
+    sentiment: str
+    news_type: str
+    summary: str
+    risk_signal: str
+    news_url: str | None = None
+
+
+class FranchisePolicy(BaseModel):
+    is_franchise_available: bool | None = None
+    franchise_fee: str | None = None
+    deposit: str | None = None
+    total_investment_range: str | None = None
+    estimated_payback_period: str | None = None
+    area_protection_policy: str | None = None
+    franchise_conditions: str | None = None
+    source_url: str | None = None
+    note: str | None = None
+
+
+class RegionCompetitionSignal(BaseModel):
+    city: str
+    target_brand: str
+    same_category_store_count: int | None = None
+    major_competitors: list[str] = Field(default_factory=list)
+    competition_level: str | None = None
+    market_heat: str | None = None
+    opportunity_points: str | None = None
+    risk_points: str | None = None
 
 
 class BrandIntelItem(BaseModel):
@@ -27,6 +74,11 @@ class BrandIntelItem(BaseModel):
     franchise_signal: str
     risk_tags: list[str]
     metrics: list[BrandMetric]
+    quote: MarketQuote | None = None
+    news: list[NewsSignal] = Field(default_factory=list)
+    franchise_policy: FranchisePolicy | None = None
+    region_competition: list[RegionCompetitionSignal] = Field(default_factory=list)
+    follow_up_data: list[str] = Field(default_factory=list)
 
 
 class BrandIntelSummary(BaseModel):
@@ -76,3 +128,4 @@ class BrandAIAnalysis(BaseModel):
     action_suggestions: list[str]
     follow_up_data: list[str]
     token_saving_note: str
+    cache_hit: bool = False

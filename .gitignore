@@ -70,9 +70,12 @@ Thumbs.db
 # Logs
 logs/
 *.log
+backend/.runtime_cache/
 
 # Generated reports
 reports/generated/
+output/
+tmp/
 
 # Local practice artifacts outside this project
 day3/

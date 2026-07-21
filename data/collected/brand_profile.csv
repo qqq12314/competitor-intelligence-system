@@ -1,0 +1,7 @@
+brand_id,brand_name,category,founded_year,headquarters,listed_status,stock_code,main_company,store_count_estimate,price_band,main_cities,brand_positioning,official_website,source_name,source_url,query_date,note
+luckin,瑞幸咖啡,咖啡,2017,厦门,美股粉单市场,LKNCY,Luckin Coffee Inc.,20500,12-28 元,"上海;北京;杭州;广州;成都",高频平价咖啡与数字化运营品牌,https://www.lkcoffee.com/,公开样例数据,https://www.lkcoffee.com/,2026-07-21,演示数据，后续由 TS 用官网和财报数据核实
+mixue,蜜雪冰城,茶饮,1997,郑州,港股上市,02097.HK,蜜雪集团,36000,4-12 元,"郑州;广州;成都;武汉;杭州",下沉市场平价茶饮与供应链品牌,https://www.mxbc.com/,公开样例数据,https://www.mxbc.com/,2026-07-21,演示数据，门店数需以后续公开披露为准
+starbucks,星巴克,咖啡,1971,西雅图,美股上市,SBUX,Starbucks Corporation,7300,28-45 元,"上海;北京;深圳;广州;杭州",高端连锁咖啡与第三空间品牌,https://www.starbucks.com.cn/,公开样例数据,https://www.starbucks.com.cn/,2026-07-21,中国门店数为演示估算
+chagee,霸王茶姬,茶饮,2017,昆明,美股上市,CHA,CHAGEE Holdings,6400,15-28 元,"上海;杭州;成都;深圳;广州",新中式原叶鲜奶茶品牌,https://www.chagee.com/,公开样例数据,https://www.chagee.com/,2026-07-21,演示数据，后续结合上市文件核实
+nayuki,奈雪的茶,茶饮,2015,深圳,港股上市,02150.HK,奈雪的茶控股有限公司,1800,18-35 元,"深圳;广州;上海;北京;杭州",高端现制茶饮与烘焙品牌,https://www.naixue.com/,公开样例数据,https://www.naixue.com/,2026-07-21,演示数据，财务和门店数需后续核实
+cotti,库迪咖啡,咖啡,2022,北京,未上市,,库迪咖啡,7000,9-22 元,"北京;上海;杭州;成都;武汉",快速扩张平价咖啡品牌,https://www.cotticoffee.com/,公开样例数据,https://www.cotticoffee.com/,2026-07-21,未上市品牌，行情字段为空
