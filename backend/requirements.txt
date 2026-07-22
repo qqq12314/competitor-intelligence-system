@@ -4,7 +4,7 @@ pydantic>=2.7.0
 pydantic-settings>=2.3.0
 python-dotenv>=1.0.1
 sqlalchemy>=2.0.30
+pymysql>=1.1.1
 pandas>=2.2.2
 langchain>=0.2.0
 langchain-openai>=0.1.8
-

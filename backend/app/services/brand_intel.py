@@ -7,12 +7,27 @@ from collections import Counter, defaultdict
 from datetime import date
 from pathlib import Path
 
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+from app.core.config import settings
+from app.db.models import (
+    BrandProfileRecord,
+    CityStoreDistributionRecord,
+    FranchisePolicyRecord,
+    MarketQuoteRecord,
+    NewsSentimentRecord,
+    RegionCompetitionRecord,
+    SourceRegistryRecord,
+)
 from app.models.brand_intel import (
     BrandAIAnalysis,
     BrandAnalysisRequest,
+    BrandDataStatus,
     BrandIntelItem,
     BrandIntelSummary,
     BrandMetric,
+    DatasetStatus,
     FranchisePolicy,
     MarketQuote,
     NewsSignal,
@@ -26,6 +41,16 @@ DATA_DIR = REPO_ROOT / "data" / "collected"
 CACHE_DIR = REPO_ROOT / "backend" / ".runtime_cache"
 CACHE_PATH = CACHE_DIR / "ai_analysis_cache.json"
 
+DATASET_FILES = {
+    "brand_profile": "brand_profile.csv",
+    "market_quote": "market_quote.csv",
+    "news_sentiment": "news_sentiment.csv",
+    "city_store_distribution": "city_store_distribution.csv",
+    "franchise_policy": "franchise_policy.csv",
+    "region_competition": "region_competition.csv",
+    "source_registry": "source_registry.csv",
+}
+
 
 def _read_csv(name: str) -> list[dict[str, str]]:
     path = DATA_DIR / name
@@ -33,6 +58,146 @@ def _read_csv(name: str) -> list[dict[str, str]]:
         return []
     with path.open("r", encoding="utf-8-sig", newline="") as file:
         return [dict(row) for row in csv.DictReader(file)]
+
+
+def _row_count(name: str) -> int:
+    return len(_read_csv(name))
+
+
+def _join(items: list[str] | None) -> str:
+    return ";".join(items or [])
+
+
+def _date_to_text(value: date | str | None) -> str | None:
+    if isinstance(value, date):
+        return value.isoformat()
+    return value
+
+
+def _bool_to_text(value: bool | None) -> str | None:
+    if value is None:
+        return None
+    return "true" if value else "false"
+
+
+def _database_has_brand_data(session: Session | None) -> bool:
+    if session is None:
+        return False
+    try:
+        return bool(session.scalar(select(func.count()).select_from(BrandProfileRecord)))
+    except Exception:
+        return False
+
+
+def _load_database_rows(session: Session | None) -> dict[str, list[dict[str, str]]]:
+    if not _database_has_brand_data(session):
+        return {}
+    assert session is not None
+
+    brand_rows = [
+        {
+            "brand_id": row.brand_id,
+            "brand_name": row.brand_name,
+            "main_company": row.main_company,
+            "category": row.category,
+            "headquarters": row.headquarters,
+            "listed_status": row.listed_status,
+            "stock_code": row.stock_code,
+            "store_count_estimate": str(row.store_count_estimate),
+            "price_band": row.price_band,
+            "main_cities": _join(row.main_cities),
+            "brand_positioning": row.brand_positioning,
+            "source_name": row.source_name,
+            "source_url": row.source_url,
+            "query_date": row.query_date or _date_to_text(row.updated_at),
+        }
+        for row in session.scalars(select(BrandProfileRecord).order_by(BrandProfileRecord.brand_name))
+    ]
+    quote_rows = [
+        {
+            "brand_name": row.brand_name,
+            "stock_code": row.stock_code,
+            "market": row.market,
+            "current_price": row.current_price,
+            "change_percent": row.change_percent,
+            "volume": row.volume,
+            "market_cap": row.market_cap,
+            "pe_ratio": row.pe_ratio,
+            "currency": row.currency,
+            "trade_date": row.trade_date,
+            "source_url": row.source_url,
+        }
+        for row in session.scalars(select(MarketQuoteRecord).order_by(MarketQuoteRecord.brand_name, MarketQuoteRecord.trade_date.desc()))
+    ]
+    news_rows = [
+        {
+            "brand_name": row.brand_name,
+            "news_title": row.news_title,
+            "source_name": row.source_name,
+            "publish_date": row.publish_date,
+            "sentiment": row.sentiment,
+            "news_type": row.news_type,
+            "news_summary": row.news_summary,
+            "risk_signal": row.risk_signal,
+            "news_url": row.news_url,
+        }
+        for row in session.scalars(select(NewsSentimentRecord).order_by(NewsSentimentRecord.publish_date.desc()))
+    ]
+    store_rows = [
+        {
+            "city": row.city,
+            "brand_name": row.brand_name,
+            "category": row.category,
+            "store_count_estimate": str(row.store_count_estimate),
+            "sample_date": row.sample_date,
+            "source_name": row.source_name,
+            "source_url": row.source_url,
+            "note": row.note,
+        }
+        for row in session.scalars(select(CityStoreDistributionRecord).order_by(CityStoreDistributionRecord.city, CityStoreDistributionRecord.brand_name))
+    ]
+    policy_rows = [
+        {
+            "brand_name": row.brand_name,
+            "is_franchise_available": _bool_to_text(row.is_franchise_available),
+            "franchise_fee": row.franchise_fee,
+            "deposit": row.deposit,
+            "total_investment_range": row.total_investment_range,
+            "estimated_payback_period": row.estimated_payback_period,
+            "area_protection_policy": row.area_protection_policy,
+            "franchise_conditions": row.franchise_conditions,
+            "source_url": row.source_url,
+            "note": row.note,
+        }
+        for row in session.scalars(select(FranchisePolicyRecord).order_by(FranchisePolicyRecord.brand_name))
+    ]
+    competition_rows = [
+        {
+            "city": row.city,
+            "target_brand": row.target_brand,
+            "same_category_store_count": str(row.same_category_store_count or ""),
+            "major_competitors": _join(row.major_competitors),
+            "competition_level": row.competition_level,
+            "market_heat": row.market_heat,
+            "opportunity_points": row.opportunity_points,
+            "risk_points": row.risk_points,
+        }
+        for row in session.scalars(select(RegionCompetitionRecord).order_by(RegionCompetitionRecord.city, RegionCompetitionRecord.target_brand))
+    ]
+
+    return {
+        "brand_profile.csv": brand_rows,
+        "market_quote.csv": quote_rows,
+        "news_sentiment.csv": news_rows,
+        "city_store_distribution.csv": store_rows,
+        "franchise_policy.csv": policy_rows,
+        "region_competition.csv": competition_rows,
+    }
+
+
+def _read_dataset(name: str, session: Session | None = None) -> list[dict[str, str]]:
+    database_rows = _load_database_rows(session).get(name, [])
+    return database_rows if database_rows else _read_csv(name)
 
 
 def _blank_to_none(value: str | None) -> str | None:
@@ -265,15 +430,16 @@ def _build_brand_item(
     )
 
 
-def _load_brand_items() -> list[BrandIntelItem]:
-    brand_rows = _read_csv("brand_profile.csv")
-    quote_rows = {row.get("brand_name"): row for row in _read_csv("market_quote.csv")}
+def _load_brand_items(session: Session | None = None) -> list[BrandIntelItem]:
+    database_rows = _load_database_rows(session)
+    brand_rows = database_rows.get("brand_profile.csv") or _read_csv("brand_profile.csv")
+    quote_rows = {row.get("brand_name"): row for row in (database_rows.get("market_quote.csv") or _read_csv("market_quote.csv"))}
     news_by_brand: dict[str, list[dict[str, str]]] = defaultdict(list)
-    for row in _read_csv("news_sentiment.csv"):
+    for row in database_rows.get("news_sentiment.csv") or _read_csv("news_sentiment.csv"):
         news_by_brand[row.get("brand_name")].append(row)
-    policy_rows = {row.get("brand_name"): row for row in _read_csv("franchise_policy.csv")}
+    policy_rows = {row.get("brand_name"): row for row in (database_rows.get("franchise_policy.csv") or _read_csv("franchise_policy.csv"))}
     competition_by_brand: dict[str, list[dict[str, str]]] = defaultdict(list)
-    for row in _read_csv("region_competition.csv"):
+    for row in database_rows.get("region_competition.csv") or _read_csv("region_competition.csv"):
         competition_by_brand[row.get("target_brand")].append(row)
 
     return [
@@ -294,9 +460,10 @@ def list_brand_intel(
     risk_level: str | None = None,
     category: str | None = None,
     scenario: str | None = None,
+    session: Session | None = None,
 ) -> list[BrandIntelItem]:
     keyword_normalized = (keyword or "").strip().lower()
-    results = _load_brand_items()
+    results = _load_brand_items(session)
     if keyword_normalized:
         results = [
             item
@@ -328,15 +495,15 @@ def list_brand_intel(
     return sorted(results, key=lambda item: max(item.investment_risk_score, item.franchise_risk_score), reverse=True)
 
 
-def get_brand_intel(brand_id: str) -> BrandIntelItem:
-    for item in _load_brand_items():
+def get_brand_intel(brand_id: str, session: Session | None = None) -> BrandIntelItem:
+    for item in _load_brand_items(session):
         if item.brand_id == brand_id:
             return item
     raise KeyError(brand_id)
 
 
-def get_brand_summary() -> BrandIntelSummary:
-    brands = _load_brand_items()
+def get_brand_summary(session: Session | None = None) -> BrandIntelSummary:
+    brands = _load_brand_items(session)
     risk_distribution = Counter(item.risk_level for item in brands)
     city_count = len({city for item in brands for city in item.key_cities})
     listed_count = sum(
@@ -356,11 +523,12 @@ def get_brand_summary() -> BrandIntelSummary:
     )
 
 
-def get_region_intel(city: str | None = None) -> RegionIntel:
-    store_rows = [row for row in _read_csv("city_store_distribution.csv") if not city or row.get("city") == city]
-    competition_rows = [row for row in _read_csv("region_competition.csv") if not city or row.get("city") == city]
+def get_region_intel(city: str | None = None, session: Session | None = None) -> RegionIntel:
+    database_rows = _load_database_rows(session)
+    store_rows = [row for row in (database_rows.get("city_store_distribution.csv") or _read_csv("city_store_distribution.csv")) if not city or row.get("city") == city]
+    competition_rows = [row for row in (database_rows.get("region_competition.csv") or _read_csv("region_competition.csv")) if not city or row.get("city") == city]
     if not store_rows and city:
-        return get_region_intel(None)
+        return get_region_intel(None, session)
 
     selected_city = city or (store_rows[0].get("city") if store_rows else "杭州")
     total_stores = sum(_to_int(row.get("store_count_estimate")) for row in store_rows)
@@ -393,6 +561,76 @@ def get_region_intel(city: str | None = None) -> RegionIntel:
     )
 
 
+def get_data_pipeline_status(session: Session | None = None) -> BrandDataStatus:
+    model_map = {
+        "brand_profile": BrandProfileRecord,
+        "market_quote": MarketQuoteRecord,
+        "news_sentiment": NewsSentimentRecord,
+        "city_store_distribution": CityStoreDistributionRecord,
+        "franchise_policy": FranchisePolicyRecord,
+        "region_competition": RegionCompetitionRecord,
+        "source_registry": SourceRegistryRecord,
+    }
+    owner_map = {
+        "brand_profile": "TS 贾璐菡",
+        "market_quote": "TS 贾璐菡",
+        "news_sentiment": "TS 贾璐菡",
+        "city_store_distribution": "TS 贾璐菡",
+        "franchise_policy": "TS 贾璐菡",
+        "region_competition": "TS 贾璐菡",
+        "source_registry": "TS 贾璐菡",
+    }
+    action_map = {
+        "brand_profile": "补充真实品牌基础信息并核实股票代码",
+        "market_quote": "导入近 30-90 天行情样例或行情接口结果",
+        "news_sentiment": "补充新闻标题、来源、情感倾向和风险信号",
+        "city_store_distribution": "补充城市门店数和采集日期",
+        "franchise_policy": "核实加盟费、保证金、总投资和回本周期",
+        "region_competition": "补充目标城市竞品门店密度和机会/风险点",
+        "source_registry": "登记数据来源、采集方式和可信度说明",
+    }
+    datasets: list[DatasetStatus] = []
+    for dataset, filename in DATASET_FILES.items():
+        csv_rows = _row_count(filename)
+        database_rows = 0
+        if session is not None:
+            try:
+                database_rows = session.scalar(select(func.count()).select_from(model_map[dataset])) or 0
+            except Exception:
+                database_rows = 0
+        datasets.append(
+            DatasetStatus(
+                dataset=dataset,
+                database_rows=database_rows,
+                csv_rows=csv_rows,
+                ready_for_import=csv_rows > 0,
+                owner_role=owner_map[dataset],
+                next_action=action_map[dataset],
+            )
+        )
+
+    total_database_rows = sum(item.database_rows for item in datasets)
+    total_csv_rows = sum(item.csv_rows for item in datasets)
+    database_engine = settings.database_url.split(":", 1)[0]
+    mysql_ready = database_engine.startswith("mysql")
+    active_source = "database" if any(item.database_rows for item in datasets if item.dataset == "brand_profile") else "csv_fallback"
+    message = (
+        "当前已连接 MySQL 配置，品牌分析接口会优先读取数据库；数据库为空时自动回退 CSV 样例。"
+        if mysql_ready
+        else "当前使用本地 SQLite/开发配置；MySQL 表结构已预留，配置 DATABASE_URL 后即可切换。"
+    )
+    return BrandDataStatus(
+        active_source=active_source,
+        database_engine=database_engine,
+        mysql_ready=mysql_ready,
+        fallback_enabled=True,
+        total_database_rows=total_database_rows,
+        total_csv_rows=total_csv_rows,
+        datasets=datasets,
+        message=message,
+    )
+
+
 def _cache_key(payload: BrandAnalysisRequest) -> str:
     raw = f"{payload.brand_id}|{payload.city or ''}|{payload.scenario}|{date.today().isoformat()}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:20]
@@ -412,9 +650,9 @@ def _write_cache(cache: dict[str, dict]) -> None:
     CACHE_PATH.write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def _build_ai_analysis_uncached(payload: BrandAnalysisRequest) -> BrandAIAnalysis:
-    brand = get_brand_intel(payload.brand_id)
-    region = get_region_intel(payload.city or (brand.key_cities[0] if brand.key_cities else None))
+def _build_ai_analysis_uncached(payload: BrandAnalysisRequest, session: Session | None = None) -> BrandAIAnalysis:
+    brand = get_brand_intel(payload.brand_id, session)
+    region = get_region_intel(payload.city or (brand.key_cities[0] if brand.key_cities else None), session)
     quote_hint = f"当前行情涨跌幅为 {brand.quote.change_percent}%" if brand.quote and brand.quote.change_percent else "当前缺少可用行情数据"
     policy_hint = (
         f"公开资料显示总投资区间为 {brand.franchise_policy.total_investment_range or '未知'}"
@@ -444,21 +682,21 @@ def _build_ai_analysis_uncached(payload: BrandAnalysisRequest) -> BrandAIAnalysi
     )
 
 
-def build_ai_analysis(payload: BrandAnalysisRequest) -> BrandAIAnalysis:
+def build_ai_analysis(payload: BrandAnalysisRequest, session: Session | None = None) -> BrandAIAnalysis:
     key = _cache_key(payload)
     cache = _read_cache()
     if key in cache:
         return BrandAIAnalysis(**cache[key], cache_hit=True)
-    result = _build_ai_analysis_uncached(payload)
+    result = _build_ai_analysis_uncached(payload, session)
     cache[key] = result.model_dump(exclude={"cache_hit"})
     _write_cache(cache)
     return result
 
 
-def build_report_markdown(brand_id: str, city: str | None = None) -> str:
-    brand = get_brand_intel(brand_id)
-    region = get_region_intel(city or (brand.key_cities[0] if brand.key_cities else None))
-    analysis = build_ai_analysis(BrandAnalysisRequest(brand_id=brand_id, city=region.city))
+def build_report_markdown(brand_id: str, city: str | None = None, session: Session | None = None) -> str:
+    brand = get_brand_intel(brand_id, session)
+    region = get_region_intel(city or (brand.key_cities[0] if brand.key_cities else None), session)
+    analysis = build_ai_analysis(BrandAnalysisRequest(brand_id=brand_id, city=region.city), session)
     news = "\n".join(f"- {item.publish_date}｜{item.title}｜{item.risk_signal}" for item in brand.news[:5]) or "- 暂无新闻样本"
     risk_points = "\n".join(f"- {item}" for item in analysis.risk_points)
     suggestions = "\n".join(f"- {item}" for item in analysis.action_suggestions)

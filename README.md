@@ -41,9 +41,33 @@
 ## 技术栈
 
 - 前端：React、TypeScript、Vite、Tailwind CSS、Lucide React、Framer Motion
-- 后端：FastAPI、Pydantic、SQLite、SQLAlchemy
+- 后端：FastAPI、Pydantic、SQLAlchemy、SQLite 开发兜底、MySQL 数据库预留
 - AI：DeepSeek API，后续预留 LangChain / RAG / Agent 工具链
-- 数据：前期样例数据，后续导入 TS 整理的 CSV / JSON
+- 数据：前期 CSV 样例数据，后续导入 TS 整理的 CSV / JSON 到 MySQL
+
+## 第 4 天推进：MySQL 数据接入预留
+
+本阶段已新增品牌投资与加盟分析专用数据库表、CSV 导入脚本和数据状态接口。后端当前采用“数据库优先、CSV 兜底”的读取策略：MySQL 有数据时优先读数据库；TS 暂未提供真实数据时继续读取 `data/collected/*.csv`，保证前端可以稳定展示。
+
+新增接口：
+
+| 接口 | 说明 |
+| --- | --- |
+| `GET /api/brand-intel/data-status` | 查看品牌基础信息、行情、舆情、门店分布、加盟政策、地区竞争和数据来源登记的数据库/CSV 行数 |
+
+MySQL 示例配置：
+
+```env
+DATABASE_URL=mysql+pymysql://root:your_password@127.0.0.1:3306/tea_coffee_brand_intel?charset=utf8mb4
+```
+
+导入当前 CSV 样例到数据库：
+
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+python -m app.db.import_brand_intel
+```
 
 ## 快速启动
 

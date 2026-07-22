@@ -130,6 +130,26 @@ export interface BrandAnalysisRequest {
   scenario?: 'investment' | 'franchise' | 'mixed'
 }
 
+export interface DatasetStatus {
+  dataset: string
+  database_rows: number
+  csv_rows: number
+  ready_for_import: boolean
+  owner_role: string
+  next_action: string
+}
+
+export interface BrandDataStatus {
+  active_source: string
+  database_engine: string
+  mysql_ready: boolean
+  fallback_enabled: boolean
+  total_database_rows: number
+  total_csv_rows: number
+  datasets: DatasetStatus[]
+  message: string
+}
+
 async function requestJson<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
@@ -156,6 +176,10 @@ async function requestText(path: string): Promise<string> {
 
 export function fetchBrandIntelSummary() {
   return requestJson<BrandIntelSummary>('/brand-intel/summary')
+}
+
+export function fetchBrandDataStatus() {
+  return requestJson<BrandDataStatus>('/brand-intel/data-status')
 }
 
 export function fetchBrandIntelList(params: {

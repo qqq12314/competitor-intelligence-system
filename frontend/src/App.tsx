@@ -7,6 +7,7 @@ import {
   Building2,
   ChevronRight,
   Coffee,
+  Database,
   FileText,
   Gauge,
   LineChart,
@@ -22,12 +23,14 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import {
+  fetchBrandDataStatus,
   fetchBrandAIAnalysis,
   fetchBrandIntelList,
   fetchBrandIntelSummary,
   fetchBrandReport,
   fetchRegionIntel,
   type BrandAIAnalysis,
+  type BrandDataStatus,
   type BrandIntelItem,
   type BrandIntelSummary,
   type RegionIntel,
@@ -71,20 +74,23 @@ function useBrandIntelData() {
   const [summary, setSummary] = useState<BrandIntelSummary | null>(null)
   const [brands, setBrands] = useState<BrandIntelItem[]>([])
   const [region, setRegion] = useState<RegionIntel | null>(null)
+  const [dataStatus, setDataStatus] = useState<BrandDataStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const load = async () => {
     setState('loading')
     setError(null)
     try {
-      const [summaryResult, brandResult, regionResult] = await Promise.all([
+      const [summaryResult, brandResult, regionResult, statusResult] = await Promise.all([
         fetchBrandIntelSummary(),
         fetchBrandIntelList({}),
         fetchRegionIntel('杭州'),
+        fetchBrandDataStatus(),
       ])
       setSummary(summaryResult)
       setBrands(brandResult)
       setRegion(regionResult)
+      setDataStatus(statusResult)
       setDataSource('api')
       setState('ready')
     } catch (err) {
@@ -101,7 +107,7 @@ function useBrandIntelData() {
     void load()
   }, [])
 
-  return { state, dataSource, summary, brands, setBrands, region, setRegion, error, reload: load }
+  return { state, dataSource, summary, brands, setBrands, region, setRegion, dataStatus, error, reload: load }
 }
 
 function EdgeDecor() {
@@ -690,29 +696,60 @@ function ReportPreview({ report }: { report: string }) {
   )
 }
 
-function DataStage() {
-  const tables = [
-    { name: 'brand_profile', rows: '品牌、上市状态、门店规模、价格带' },
-    { name: 'market_quote', rows: '股票行情、涨跌幅、成交量、市值' },
-    { name: 'news_sentiment', rows: '新闻标题、来源、情感倾向、关键词' },
-    { name: 'region_competition', rows: '城市门店密度、竞品品牌、商圈热度' },
-    { name: 'franchise_policy', rows: '加盟费、保证金、装修费、回本周期' },
-  ]
-
+function DataStage({ status }: { status: BrandDataStatus | null }) {
+  const datasets = status?.datasets || []
   return (
     <section className="rounded-[20px] border border-line/85 bg-white p-6 shadow-soft">
-      <div>
-        <p className="text-sm font-bold text-ocean">数据库预留区</p>
-        <h2 className="mt-2 text-2xl font-black text-ink">等待 TS 后续导入真实数据</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-copy">
-          当前先用后端样例数据跑通搜索、地区分析、风险评分、AI 分析和报告生成。后续 TS 给出爬虫或人工整理数据后，按下面字段表导入即可。
-        </p>
+      <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+        <div>
+          <p className="text-sm font-bold text-ocean">第 4 天 · MySQL 数据接入预留</p>
+          <h2 className="mt-2 text-2xl font-black text-ink">数据库表结构已预留，真实数据到位后可直接导入</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-copy">
+            当前后端采用“数据库优先、CSV 兜底”的方式：如果 MySQL 中已有品牌分析数据，接口会优先读取数据库；如果 TS 暂时无法提供真实数据，页面仍使用 CSV 样例保持可展示状态。
+          </p>
+          <p className="mt-2 max-w-3xl text-sm leading-7 text-copy">{status?.message || '正在等待后端数据状态接口返回。'}</p>
+        </div>
+        <div className="grid min-w-[280px] grid-cols-2 gap-3 rounded-2xl border border-line bg-[#FAFCFF] p-4">
+          <div>
+            <p className="text-xs uppercase text-copy">Active Source</p>
+            <p className="mt-2 text-lg font-black text-ink">{status?.active_source === 'database' ? 'Database' : 'CSV Fallback'}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase text-copy">Engine</p>
+            <p className="mt-2 text-lg font-black text-ink">{status?.database_engine || 'loading'}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase text-copy">DB Rows</p>
+            <p className="mt-2 text-lg font-black text-champagne">{status?.total_database_rows ?? 0}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase text-copy">CSV Rows</p>
+            <p className="mt-2 text-lg font-black text-champagne">{status?.total_csv_rows ?? 0}</p>
+          </div>
+        </div>
       </div>
-      <div className="mt-6 grid gap-4 lg:grid-cols-5">
-        {tables.map((table) => (
-          <div key={table.name} className="rounded-2xl border border-line bg-[#FAFCFF] p-4">
-            <p className="text-xs uppercase text-copy">{table.name}</p>
-            <p className="mt-3 text-sm leading-6 text-copy">{table.rows}</p>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {datasets.map((item) => (
+          <div key={item.dataset} className="rounded-2xl border border-line bg-[#FAFCFF] p-4 transition duration-300 hover:-translate-y-1 hover:shadow-cafe">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase text-copy">{item.dataset}</p>
+                <p className="mt-2 text-sm font-bold text-ink">{item.owner_role}</p>
+              </div>
+              <Database className="h-5 w-5 text-champagne" />
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-xl bg-white p-3">
+                <p className="text-xs text-copy">数据库</p>
+                <p className="mt-1 font-black text-ink">{item.database_rows}</p>
+              </div>
+              <div className="rounded-xl bg-white p-3">
+                <p className="text-xs text-copy">CSV 样例</p>
+                <p className="mt-1 font-black text-ink">{item.csv_rows}</p>
+              </div>
+            </div>
+            <p className="mt-4 text-xs leading-5 text-copy">{item.next_action}</p>
           </div>
         ))}
       </div>
@@ -721,7 +758,7 @@ function DataStage() {
 }
 
 export default function App() {
-  const { state, dataSource, summary, brands, region, setRegion, error, reload } = useBrandIntelData()
+  const { state, dataSource, summary, brands, region, setRegion, dataStatus, error, reload } = useBrandIntelData()
   const [search, setSearch] = useState('')
   const [city, setCity] = useState('杭州')
   const [category, setCategory] = useState('')
@@ -826,7 +863,7 @@ export default function App() {
         <div className="mt-8 grid gap-6 lg:grid-cols-[1.02fr_0.98fr]">
           <motion.div {...fadeIn} className="relative min-h-[430px] overflow-hidden rounded-[20px] bg-white p-6 shadow-soft ring-1 ring-line md:min-h-[520px] md:p-10">
             <div className="absolute right-6 top-6 rounded-xl border border-line bg-[#F8FBFF] px-3 py-1.5 text-xs font-semibold text-copy">
-              Version 1 · New Direction
+              Day 4 · MySQL Ready
             </div>
 
             <div className="flex h-full flex-col justify-between">
@@ -926,7 +963,7 @@ export default function App() {
         </div>
 
         <div className="mt-8">
-          <DataStage />
+          <DataStage status={dataStatus} />
         </div>
 
         {error && (

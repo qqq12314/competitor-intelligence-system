@@ -129,3 +129,23 @@ class BrandAIAnalysis(BaseModel):
     follow_up_data: list[str]
     token_saving_note: str
     cache_hit: bool = False
+
+
+class DatasetStatus(BaseModel):
+    dataset: str
+    database_rows: int
+    csv_rows: int
+    ready_for_import: bool
+    owner_role: str
+    next_action: str
+
+
+class BrandDataStatus(BaseModel):
+    active_source: str
+    database_engine: str
+    mysql_ready: bool
+    fallback_enabled: bool
+    total_database_rows: int
+    total_csv_rows: int
+    datasets: list[DatasetStatus]
+    message: str
