@@ -631,6 +631,58 @@ def get_data_pipeline_status(session: Session | None = None) -> BrandDataStatus:
     )
 
 
+def get_project_overview(session: Session | None = None) -> dict:
+    data_status = get_data_pipeline_status(session)
+    summary = get_brand_summary(session)
+    return {
+        "stage": "第 5 天 · 功能页面完善与接口联调",
+        "positioning": "面向股民和加盟意向用户的茶饮咖啡品牌投资与加盟风险智能分析系统",
+        "business_scenarios": [
+            {
+                "title": "股民投资辅助分析",
+                "description": "围绕上市或关联资本市场品牌，聚合行情、新闻舆情、品牌扩张和行业竞争信息，辅助用户识别投资风险。",
+            },
+            {
+                "title": "地区加盟风险评估",
+                "description": "面向普通加盟意向用户，结合城市门店密度、竞品品牌、加盟成本和区域保护政策，提示加盟前需要重点核实的问题。",
+            },
+            {
+                "title": "智能报告生成",
+                "description": "用户选择品牌与城市后手动触发分析，系统生成投资视角、加盟视角、风险点和后续调查建议，避免频繁消耗大模型 token。",
+            },
+        ],
+        "feature_modules": [
+            {"name": "首页总览", "status": "已完成", "detail": "展示核心指数、品牌样本、城市覆盖、新闻样本和当前数据源。"},
+            {"name": "品牌风险", "status": "已完善", "detail": "支持搜索、地区、品类、风险等级和使用场景筛选，并展示品牌画像与风险标签。"},
+            {"name": "地区加盟", "status": "已完善", "detail": "展示城市市场热度、竞争水平、门店密度、主要竞品、机会点与风险点。"},
+            {"name": "智能报告", "status": "已完善", "detail": "支持手动 AI 分析、缓存提示和 Markdown 报告预览，后续可扩展 Word/PDF 导出。"},
+            {"name": "项目说明", "status": "已完善", "detail": "说明业务场景、技术路线、数据接入状态和后续开发任务。"},
+            {"name": "MySQL 数据层", "status": "已接入", "detail": f"当前数据源为 {data_status.active_source}，数据库行数 {data_status.total_database_rows}，CSV 样例行数 {data_status.total_csv_rows}。"},
+        ],
+        "technical_points": [
+            "前端使用 React + TypeScript + Tailwind CSS + Framer Motion 构建响应式单页界面。",
+            "后端使用 FastAPI + Pydantic + SQLAlchemy，对外提供品牌、地区、报告、AI 分析和数据状态接口。",
+            "数据库采用 MySQL，当前已建立品牌、行情、新闻、门店、加盟政策、地区竞争和数据来源表。",
+            "数据读取采用数据库优先、CSV 兜底机制，避免 TS 数据未到位时页面不可展示。",
+            "DeepSeek 分析采用手动触发与缓存机制，控制 token 成本，并保留后续接入真实模型的接口位置。",
+        ],
+        "next_tasks": [
+            "继续补齐行情走势图、新闻舆情详情和地区品牌对比展示。",
+            "等待 TS 补充真实数据后执行 MySQL 导入，并校验字段缺失和重复记录。",
+            "继续优化投资风险指数和加盟风险指数的评分解释。",
+            "完善报告导出能力，逐步支持 Markdown、Word 和 PDF。",
+        ],
+        "metrics": {
+            "brand_count": summary.brand_count,
+            "listed_brand_count": summary.listed_brand_count,
+            "city_count": summary.city_count,
+            "news_count": summary.news_count,
+            "database_rows": data_status.total_database_rows,
+            "csv_rows": data_status.total_csv_rows,
+        },
+    }
+
+
 def _cache_key(payload: BrandAnalysisRequest) -> str:
     raw = f"{payload.brand_id}|{payload.city or ''}|{payload.scenario}|{date.today().isoformat()}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:20]

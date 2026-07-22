@@ -150,6 +150,27 @@ export interface BrandDataStatus {
   message: string
 }
 
+export interface ProjectScenario {
+  title: string
+  description: string
+}
+
+export interface ProjectFeatureModule {
+  name: string
+  status: string
+  detail: string
+}
+
+export interface ProjectOverview {
+  stage: string
+  positioning: string
+  business_scenarios: ProjectScenario[]
+  feature_modules: ProjectFeatureModule[]
+  technical_points: string[]
+  next_tasks: string[]
+  metrics: Record<string, number>
+}
+
 async function requestJson<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
@@ -180,6 +201,10 @@ export function fetchBrandIntelSummary() {
 
 export function fetchBrandDataStatus() {
   return requestJson<BrandDataStatus>('/brand-intel/data-status')
+}
+
+export function fetchProjectOverview() {
+  return requestJson<ProjectOverview>('/brand-intel/project-overview')
 }
 
 export function fetchBrandIntelList(params: {

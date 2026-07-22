@@ -10,6 +10,7 @@ from app.services.brand_intel import (
     get_data_pipeline_status,
     get_brand_intel,
     get_brand_summary,
+    get_project_overview,
     get_region_intel,
     list_brand_intel,
 )
@@ -25,6 +26,11 @@ def brand_intel_summary(db: Session = Depends(get_db)) -> dict:
 @router.get("/data-status")
 def brand_data_status(db: Session = Depends(get_db)) -> dict:
     return get_data_pipeline_status(db).model_dump()
+
+
+@router.get("/project-overview")
+def brand_project_overview(db: Session = Depends(get_db)) -> dict:
+    return get_project_overview(db)
 
 
 @router.get("/brands")

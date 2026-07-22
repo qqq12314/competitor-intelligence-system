@@ -37,6 +37,7 @@
 | `GET /api/brand-intel/region?city=杭州` | 获取地区加盟环境与竞品分析 |
 | `POST /api/brand-intel/ai/analyze` | 手动触发 AI 分析，输入品牌、城市和分析场景 |
 | `GET /api/brand-intel/reports/{brand_id}.md` | 获取 Markdown 分析报告 |
+| `GET /api/brand-intel/project-overview` | 获取项目业务场景、功能模块、技术要点和下一阶段任务 |
 
 ## 技术栈
 

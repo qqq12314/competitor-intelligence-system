@@ -28,11 +28,13 @@ import {
   fetchBrandIntelList,
   fetchBrandIntelSummary,
   fetchBrandReport,
+  fetchProjectOverview,
   fetchRegionIntel,
   type BrandAIAnalysis,
   type BrandDataStatus,
   type BrandIntelItem,
   type BrandIntelSummary,
+  type ProjectOverview,
   type RegionIntel,
 } from './api/client'
 import { MOCK_AI_ANALYSIS, MOCK_BRANDS, MOCK_REGION, MOCK_SUMMARY } from './mockData'
@@ -42,7 +44,13 @@ type AnalysisState = 'idle' | 'loading' | 'ready' | 'error'
 type DataSource = 'api' | 'mock'
 type Scenario = 'mixed' | 'investment' | 'franchise'
 
-const navItems = ['首页', '品牌风险', '地区加盟', '智能报告', '项目说明']
+const navItems = [
+  { label: '首页', href: '#home' },
+  { label: '品牌风险', href: '#brand-risk' },
+  { label: '地区加盟', href: '#region-franchise' },
+  { label: '智能报告', href: '#smart-report' },
+  { label: '项目说明', href: '#project-info' },
+]
 const riskLevels = ['中低风险', '中风险', '较高风险']
 const categories = ['咖啡', '茶饮']
 
@@ -75,22 +83,25 @@ function useBrandIntelData() {
   const [brands, setBrands] = useState<BrandIntelItem[]>([])
   const [region, setRegion] = useState<RegionIntel | null>(null)
   const [dataStatus, setDataStatus] = useState<BrandDataStatus | null>(null)
+  const [projectOverview, setProjectOverview] = useState<ProjectOverview | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const load = async () => {
     setState('loading')
     setError(null)
     try {
-      const [summaryResult, brandResult, regionResult, statusResult] = await Promise.all([
+      const [summaryResult, brandResult, regionResult, statusResult, overviewResult] = await Promise.all([
         fetchBrandIntelSummary(),
         fetchBrandIntelList({}),
         fetchRegionIntel('杭州'),
         fetchBrandDataStatus(),
+        fetchProjectOverview(),
       ])
       setSummary(summaryResult)
       setBrands(brandResult)
       setRegion(regionResult)
       setDataStatus(statusResult)
+      setProjectOverview(overviewResult)
       setDataSource('api')
       setState('ready')
     } catch (err) {
@@ -107,7 +118,7 @@ function useBrandIntelData() {
     void load()
   }, [])
 
-  return { state, dataSource, summary, brands, setBrands, region, setRegion, dataStatus, error, reload: load }
+  return { state, dataSource, summary, brands, setBrands, region, setRegion, dataStatus, projectOverview, error, reload: load }
 }
 
 function EdgeDecor() {
@@ -141,9 +152,9 @@ function Navigation({ dataSource }: { dataSource: DataSource }) {
 
         <div className="grid grid-cols-3 gap-x-3 gap-y-3 text-xs text-white/68 sm:flex sm:flex-wrap sm:items-center sm:text-sm md:gap-x-6">
           {navItems.map((item, index) => (
-            <a key={item} className="group flex items-center gap-2 transition hover:text-white" href="#">
+            <a key={item.href} className="group flex items-center gap-2 rounded-lg px-1 py-1 transition hover:text-white" href={item.href}>
               {index === 0 && <span className="h-1.5 w-1.5 rounded-full bg-champagne" />}
-              <span>{item}</span>
+              <span>{item.label}</span>
             </a>
           ))}
         </div>
@@ -238,6 +249,31 @@ function SummaryStrip({ summary }: { summary: BrandIntelSummary | null }) {
         <MetricCard key={card.label} {...card} />
       ))}
     </section>
+  )
+}
+
+function SectionIntro({
+  eyebrow,
+  title,
+  description,
+  icon: Icon,
+}: {
+  eyebrow: string
+  title: string
+  description: string
+  icon: typeof Activity
+}) {
+  return (
+    <div className="mb-5 flex flex-col gap-4 rounded-[20px] border border-line/85 bg-white/82 p-5 shadow-sm backdrop-blur md:flex-row md:items-center md:justify-between">
+      <div>
+        <p className="text-sm font-bold text-ocean">{eyebrow}</p>
+        <h2 className="mt-2 text-2xl font-black text-ink md:text-3xl">{title}</h2>
+        <p className="mt-3 max-w-4xl text-sm leading-7 text-copy">{description}</p>
+      </div>
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-ink text-champagne">
+        <Icon className="h-5 w-5" strokeWidth={1.8} />
+      </div>
+    </div>
   )
 }
 
@@ -757,8 +793,77 @@ function DataStage({ status }: { status: BrandDataStatus | null }) {
   )
 }
 
+function ProjectInfoSection({ overview, status }: { overview: ProjectOverview | null; status: BrandDataStatus | null }) {
+  const scenarios = overview?.business_scenarios || [
+    { title: '股民投资辅助分析', description: '围绕品牌行情、新闻舆情和扩张情况进行风险提示。' },
+    { title: '地区加盟风险评估', description: '结合城市门店密度、竞品分布和加盟政策提示经营风险。' },
+    { title: '智能报告生成', description: '手动触发 AI 分析，生成更适合汇报和后续调查的摘要。' },
+  ]
+  const modules = overview?.feature_modules || []
+  const technicalPoints = overview?.technical_points || []
+  const nextTasks = overview?.next_tasks || []
+
+  return (
+    <section className="space-y-6">
+      <div className="rounded-[20px] border border-line/85 bg-white p-6 shadow-soft">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-sm font-bold text-ocean">{overview?.stage || '第 5 天 · 功能页面完善与接口联调'}</p>
+            <h2 className="mt-2 text-2xl font-black text-ink md:text-3xl">项目说明与技术落实</h2>
+            <p className="mt-3 max-w-4xl text-sm leading-7 text-copy">
+              {overview?.positioning || '面向股民和加盟意向用户的茶饮咖啡品牌投资与加盟风险智能分析系统。'}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-ink px-5 py-4 text-right text-white">
+            <p className="text-xs uppercase text-white/60">Data Layer</p>
+            <p className="mt-2 text-2xl font-black text-champagne">{status?.mysql_ready ? 'MySQL' : 'CSV'}</p>
+            <p className="mt-1 text-xs text-white/58">{status?.active_source || 'loading'}</p>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          {scenarios.map((item) => (
+            <div key={item.title} className="rounded-2xl border border-line bg-[#FAFCFF] p-5">
+              <p className="text-base font-black text-ink">{item.title}</p>
+              <p className="mt-3 text-sm leading-7 text-copy">{item.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+        <div className="rounded-[20px] border border-line/85 bg-white p-6 shadow-soft">
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-bold text-ocean">模块完成情况</p>
+              <h3 className="mt-2 text-2xl font-black text-ink">导航功能已形成可展示闭环</h3>
+            </div>
+            <BadgeCheck className="h-6 w-6 text-champagne" />
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {modules.map((item) => (
+              <div key={item.name} className="rounded-2xl border border-line bg-[#FAFCFF] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-black text-ink">{item.name}</p>
+                  <span className="rounded-lg bg-white px-2 py-1 text-xs font-bold text-champagne ring-1 ring-line">{item.status}</span>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-copy">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <SignalList title="技术要点" items={technicalPoints} />
+          <SignalList title="下一阶段任务" items={nextTasks} />
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function App() {
-  const { state, dataSource, summary, brands, region, setRegion, dataStatus, error, reload } = useBrandIntelData()
+  const { state, dataSource, summary, brands, region, setRegion, dataStatus, projectOverview, error, reload } = useBrandIntelData()
   const [search, setSearch] = useState('')
   const [city, setCity] = useState('杭州')
   const [category, setCategory] = useState('')
@@ -860,7 +965,7 @@ export default function App() {
       <section className="relative mx-auto w-full max-w-[1400px]">
         <Navigation dataSource={dataSource} />
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1.02fr_0.98fr]">
+        <div id="home" className="mt-8 scroll-mt-8 grid gap-6 lg:grid-cols-[1.02fr_0.98fr]">
           <motion.div {...fadeIn} className="relative min-h-[430px] overflow-hidden rounded-[20px] bg-white p-6 shadow-soft ring-1 ring-line md:min-h-[520px] md:p-10">
             <div className="absolute right-6 top-6 rounded-xl border border-line bg-[#F8FBFF] px-3 py-1.5 text-xs font-semibold text-copy">
               Day 4 · MySQL Ready
@@ -928,43 +1033,73 @@ export default function App() {
 
         <SummaryStrip summary={summary} />
 
-        <FilterBar
-          search={search}
-          city={city}
-          category={category}
-          riskLevel={riskLevel}
-          scenario={scenario}
-          cities={cities}
-          resultCount={filteredBrands.length}
-          onSearch={setSearch}
-          onCity={setCity}
-          onCategory={setCategory}
-          onRiskLevel={setRiskLevel}
-          onScenario={setScenario}
-          onClear={clearFilters}
-        />
-
         {state === 'loading' && (
           <div className="mt-8 rounded-[20px] border border-line bg-white p-6 text-sm text-copy shadow-soft">正在加载品牌投资与加盟风险接口...</div>
         )}
 
-        <div className="mt-8 grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-          <BrandList brands={filteredBrands} activeBrandId={activeBrand?.brand_id || ''} onSelect={setActiveBrandId} />
-          <BrandDetail brand={activeBrand} />
-        </div>
+        <section id="brand-risk" className="mt-10 scroll-mt-8">
+          <SectionIntro
+            eyebrow="品牌风险"
+            title="品牌投资与加盟风险筛选"
+            description="支持按品牌名称、股票代码、城市、品类、风险等级和使用场景进行定位，帮助用户先找到需要重点关注的品牌样本，再查看对应风险解释。"
+            icon={ShieldCheck}
+          />
+          <FilterBar
+            search={search}
+            city={city}
+            category={category}
+            riskLevel={riskLevel}
+            scenario={scenario}
+            cities={cities}
+            resultCount={filteredBrands.length}
+            onSearch={setSearch}
+            onCity={setCity}
+            onCategory={setCategory}
+            onRiskLevel={setRiskLevel}
+            onScenario={setScenario}
+            onClear={clearFilters}
+          />
+          <div className="mt-6 grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
+            <BrandList brands={filteredBrands} activeBrandId={activeBrand?.brand_id || ''} onSelect={setActiveBrandId} />
+            <BrandDetail brand={activeBrand} />
+          </div>
+        </section>
 
-        <div className="mt-8">
+        <section id="region-franchise" className="mt-10 scroll-mt-8">
+          <SectionIntro
+            eyebrow="地区加盟"
+            title={`${city || region?.city || '目标城市'}加盟环境与竞品观察`}
+            description="面向加盟意向用户，重点展示目标城市的门店密度、竞品品牌、市场热度、机会点和风险点，后续可继续接入商圈租金与外卖销量数据。"
+            icon={MapPin}
+          />
           <RegionPanel region={region} />
-        </div>
+        </section>
 
-        <div className="mt-8 grid gap-6 xl:grid-cols-[0.96fr_1.04fr]">
-          <AIAnalysisPanel analysis={analysis} state={analysisState} onGenerate={generateAnalysis} />
-          <ReportPreview report={report} />
-        </div>
+        <section id="smart-report" className="mt-10 scroll-mt-8">
+          <SectionIntro
+            eyebrow="智能报告"
+            title="手动触发 DeepSeek 分析与报告预览"
+            description="品牌或地区切换时不自动调用大模型；用户点击生成后，后端只传入聚合摘要和评分结果，并优先读取缓存，减少 token 消耗。"
+            icon={Sparkles}
+          />
+          <div className="grid gap-6 xl:grid-cols-[0.96fr_1.04fr]">
+            <AIAnalysisPanel analysis={analysis} state={analysisState} onGenerate={generateAnalysis} />
+            <ReportPreview report={report} />
+          </div>
+        </section>
 
-        <div className="mt-8">
-          <DataStage status={dataStatus} />
-        </div>
+        <section id="project-info" className="mt-10 scroll-mt-8">
+          <SectionIntro
+            eyebrow="项目说明"
+            title="业务场景、技术路线与数据接入进度"
+            description="说明系统面向股民和加盟意向用户的核心场景，展示前后端模块完成情况、MySQL 数据层状态和下一阶段开发任务。"
+            icon={FileText}
+          />
+          <ProjectInfoSection overview={projectOverview} status={dataStatus} />
+          <div className="mt-6">
+            <DataStage status={dataStatus} />
+          </div>
+        </section>
 
         {error && (
           <section className="mt-8 rounded-[20px] border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">
