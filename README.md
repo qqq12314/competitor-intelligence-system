@@ -1,86 +1,64 @@
-# 茶饮咖啡品牌投资与加盟风险智能分析系统
+# 茶饮咖啡加盟风险智能分析系统
 
-本项目基于最新汇报方向，已由“茶饮咖啡小微商户信贷风控”调整为“茶饮咖啡品牌投资与加盟风险智能分析”。系统主要面向两类用户：
+本项目面向准备加盟茶饮、咖啡品牌的用户，使用一个 `Franchise Risk Agent` 分析品牌政策、投入成本、目标城市门店密度、竞品、舆情和数据完整性，并输出证据、缺失数据、尽调问题与 Markdown 报告。
 
-1. 股民与普通投资者：查看茶饮咖啡品牌或关联股票的行情风险、新闻舆情、品牌扩张和投资关注点。
-2. 加盟意向用户：选择城市和品牌，分析当地加盟风险、门店密度、竞争品牌、市场热度和后续需要调查的数据。
+当前主线仅为“加盟风险”。股票代码、PE、市值和投资评分不再作为前端功能。历史信贷风控与品牌数据接口仍保留在后端，供数据、评分和报告能力复用。
 
-系统输出用于课程项目演示和辅助分析，不构成确定性投资建议、买卖建议或加盟承诺。
-
-## 当前版本完成内容
-
-- 前端首页已切换为品牌投资与加盟风险方向，保留深海军蓝、浅金色、冰川蓝灰和雪山主视觉风格。
-- 新增品牌搜索、地区筛选、品类筛选、风险等级筛选和使用场景筛选。
-- 新增投资风险指数、加盟风险指数、地区加盟环境、品牌样本卡和 Markdown 报告预览。
-- DeepSeek 分析改为手动点击触发，避免切换品牌时自动消耗 token。
-- 后端新增 `/api/brand-intel/*` 接口，旧信贷风控接口保留为 legacy，方便后续复用数据导入和评分代码。
-- 当前使用后端样例数据跑通主流程，后续等待 TS 补充真实行情、新闻、门店和加盟政策数据。
-
-## 核心业务流程
+## 核心架构
 
 ```text
-品牌 / 行情 / 新闻 / 门店 / 加盟政策数据
-  -> 数据清洗与字段标准化
-  -> 品牌投资风险评分 + 地区加盟风险评分
-  -> 前端搜索筛选与地区分析
-  -> 用户手动触发 DeepSeek 智能解释
-  -> Markdown / Word / PDF 分析报告
+用户问题
+  -> POST /api/franchise-agent/analyze
+  -> 唯一的 Franchise Risk Agent（DeepSeek + LangChain）
+     -> 6 个工具（结构化数据、RAG、规则评分）
+  -> franchise_analysis_chain（Pydantic 结构化输出）
+  -> report_chain（Markdown 报告）
+  -> 风险分数 + 证据 + 缺失数据 + 尽调问题 + 工具轨迹
 ```
 
-## 新版接口
+RAG 是 Agent 调用的一个工具，不是第二个 Agent。城市数据不存在时，系统返回 `insufficient_data`，不会用其他城市的数据替代。
 
-| 接口 | 说明 |
-| --- | --- |
-| `GET /api/brand-intel/summary` | 获取品牌数量、上市关联数量、城市数量、新闻样本和风险分布 |
-| `GET /api/brand-intel/brands` | 获取品牌样本列表，支持 `keyword`、`city`、`category`、`risk_level`、`scenario` 筛选 |
-| `GET /api/brand-intel/brands/{brand_id}` | 获取单个品牌画像 |
-| `GET /api/brand-intel/region?city=杭州` | 获取地区加盟环境与竞品分析 |
-| `POST /api/brand-intel/ai/analyze` | 手动触发 AI 分析，输入品牌、城市和分析场景 |
-| `GET /api/brand-intel/reports/{brand_id}.md` | 获取 Markdown 分析报告 |
-| `GET /api/brand-intel/project-overview` | 获取项目业务场景、功能模块、技术要点和下一阶段任务 |
+六个工具：
+
+1. `search_brand`
+2. `get_franchise_policy`
+3. `analyze_region`
+4. `get_franchise_sentiment`
+5. `search_franchise_knowledge`
+6. `calculate_franchise_risk`
+
+五个风险维度：品牌与政策 25%、地区竞争 25%、成本与回本 20%、舆情与经营 15%、数据完整性 15%。规则引擎计算分数，LLM 只能负责解释，不能篡改规则分数。
 
 ## 技术栈
 
-- 前端：React、TypeScript、Vite、Tailwind CSS、Lucide React、Framer Motion
-- 后端：FastAPI、Pydantic、SQLAlchemy、SQLite 开发兜底、MySQL 数据库预留
-- AI：DeepSeek API，后续预留 LangChain / RAG / Agent 工具链
-- 数据：前期 CSV 样例数据，后续导入 TS 整理的 CSV / JSON 到 MySQL
+- 前端：React、TypeScript、Vite、Tailwind CSS、Lucide React
+- 后端：FastAPI、Pydantic、SQLAlchemy、SQLite/MySQL
+- Agent：LangChain `create_agent`、DeepSeek OpenAI 兼容接口、Callbacks
+- RAG：Chroma 持久化向量库、Markdown 分块、证据 ID
+- Chain：LCEL、Pydantic structured output、Markdown report chain
+- 测试：pytest、FastAPI TestClient、TypeScript/Vite production build
 
-## 第 4 天推进：MySQL 数据接入预留
+知识库当前包含 `data/knowledge/` 下 20 份 Markdown 课程演示资料。默认使用本地中文字符/二元组哈希向量，便于离线演示且不产生 Embedding API 费用；生产环境可替换为 BGE 等中文 Embedding 模型。
 
-本阶段已新增品牌投资与加盟分析专用数据库表、CSV 导入脚本和数据状态接口。后端当前采用“数据库优先、CSV 兜底”的读取策略：MySQL 有数据时优先读数据库；TS 暂未提供真实数据时继续读取 `data/collected/*.csv`，保证前端可以稳定展示。
+## 环境配置
 
-新增接口：
-
-| 接口 | 说明 |
-| --- | --- |
-| `GET /api/brand-intel/data-status` | 查看品牌基础信息、行情、舆情、门店分布、加盟政策、地区竞争和数据来源登记的数据库/CSV 行数 |
-
-MySQL 示例配置：
+复制根目录 `.env.example` 的配置到 `backend/.env`，填写 DeepSeek Key：
 
 ```env
-DATABASE_URL=mysql+pymysql://root:your_password@127.0.0.1:3306/tea_coffee_brand_intel?charset=utf8mb4
+LLM_PROVIDER=deepseek
+DEEPSEEK_API_KEY=你的密钥
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-v4-flash
+EMBEDDING_MODEL=local-zh-hash-v1
+CHROMA_PERSIST_DIRECTORY=../data/chroma
+RAG_TOP_K=5
 ```
 
-导入当前 CSV 样例到数据库：
+`backend/.env` 已被 Git 忽略，不要把真实密钥提交到仓库。
 
-```powershell
-cd backend
-.\.venv\Scripts\Activate.ps1
-python -m app.db.import_brand_intel
-```
+## 启动项目
 
-## 快速启动
-
-后端：
-
-```powershell
-cd backend
-.\.venv\Scripts\Activate.ps1
-uvicorn app.main:app --reload
-```
-
-如果尚未创建虚拟环境：
+后端（PowerShell）：
 
 ```powershell
 cd backend
@@ -90,31 +68,53 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-前端：
+首次启动会自动创建数据库并构建 Chroma 知识索引。
+
+前端（另开一个 PowerShell）：
 
 ```powershell
 cd frontend
-cmd /c npm install
-cmd /c npm run dev
+pnpm install
+pnpm dev
 ```
 
 访问地址：
 
-- 前端：`http://127.0.0.1:5173`
-- API：`http://127.0.0.1:8000`
-- Swagger：`http://127.0.0.1:8000/docs`
-- 健康检查：`http://127.0.0.1:8000/health`
+- 前端：http://127.0.0.1:5173
+- API：http://127.0.0.1:8000
+- Swagger：http://127.0.0.1:8000/docs
+- 健康检查：http://127.0.0.1:8000/health
 
-## 后续需要 TS 补充的数据
+固定演示问题：
 
-| 数据类型 | 字段示例 | 用途 |
+> 分析蜜雪冰城在杭州的加盟风险，重点关注加盟政策、投入成本、城市门店密度、竞品、负面舆情，并给出证据、缺失数据和尽调问题。
+
+## 新增 API
+
+| 方法 | 接口 | 说明 |
 | --- | --- | --- |
-| 行情数据 | 股票代码、价格、涨跌幅、成交量、市值、更新时间 | 投资风险评分 |
-| 新闻舆情 | 标题、来源、发布时间、情感倾向、关键词 | 舆情风险解释 |
-| 门店分布 | 城市、品牌、门店数、商圈密度、增长趋势 | 地区加盟风险 |
-| 加盟政策 | 加盟费、保证金、装修费、投资区间、回本周期 | 加盟成本评估 |
-| 地区竞争 | 城市、竞品品牌、竞品门店数、市场热度 | 区域竞争分析 |
+| GET | `/api/knowledge/status` | 查看 Chroma 文档数、分块数与索引状态 |
+| POST | `/api/knowledge/search` | 检索带证据 ID 和来源的知识片段 |
+| POST | `/api/knowledge/reindex` | 强制重建知识索引 |
+| GET | `/api/franchise-agent/framework` | 查看单 Agent、模型、Chain 和 RAG 状态 |
+| GET | `/api/franchise-agent/tools` | 查看六个 LangChain 工具及参数 Schema |
+| POST | `/api/franchise-agent/analyze` | 运行完整加盟风险 Agent 工作流 |
 
-## Token 控制方案
+## 验证
 
-系统默认只使用规则评分和后端摘要展示结果。DeepSeek 分析必须由用户手动点击触发，后端只传品牌摘要、地区摘要和评分结果，不传大规模原始 CSV。后续可增加缓存机制，同一品牌、同一城市、同一天的分析结果优先读取缓存。
+```powershell
+cd backend
+$env:DEEPSEEK_API_KEY=''
+.\.venv\Scripts\python.exe -m pytest -q
+
+cd ..\frontend
+pnpm build
+```
+
+测试时清空 DeepSeek Key，确保不会产生真实 API 费用，并验证本地确定性降级链路。当前自动化覆盖知识索引、RAG 检索、单 Agent 数量、六工具契约、固定问题、五维评分、工具轨迹和禁止城市回退。
+
+## 数据免责声明
+
+当前知识库和 CSV 中的费用、门店、政策与舆情数据主要用于课程演示，部分来源为第三方或示例 URL，不能视为实时官方事实。正式加盟决策前必须向品牌官方、商务主管部门、拟选址物业和现有加盟商交叉核验。
+
+详细实施说明见 [docs/single-agent-rag-implementation.md](docs/single-agent-rag-implementation.md)。

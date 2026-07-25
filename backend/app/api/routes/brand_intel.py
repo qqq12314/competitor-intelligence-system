@@ -65,7 +65,10 @@ def brand_intel_detail(brand_id: str, db: Session = Depends(get_db)) -> dict:
 
 @router.get("/region")
 def region_intel(city: str | None = None, db: Session = Depends(get_db)) -> dict:
-    return get_region_intel(city, db).model_dump()
+    try:
+        return get_region_intel(city, db).model_dump()
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=f"No region data for city: {city}") from exc
 
 
 @router.post("/ai/analyze")

@@ -1,12 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.risk_config import RiskScoringConfig, get_risk_scoring_config
 from app.db.session import get_db
 from app.models.risk import RiskAssessment
 from app.repositories.risk_repository import get_merchant, list_merchants
 from app.services.risk_scoring import score_merchant
 
 router = APIRouter()
+
+
+@router.get("/config", response_model=RiskScoringConfig)
+def get_scoring_config() -> RiskScoringConfig:
+    """Expose non-sensitive scoring metadata for explainability and the dashboard."""
+    return get_risk_scoring_config()
 
 
 @router.get("/{merchant_id}", response_model=RiskAssessment)

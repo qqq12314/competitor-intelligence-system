@@ -1,0 +1,71 @@
+{
+  "version": "1.0.0",
+  "dimensions": {
+    "经营能力": 0.22,
+    "财务压力": 0.22,
+    "品牌稳定性": 0.14,
+    "行业竞争": 0.12,
+    "合同风险": 0.12,
+    "舆情预警": 0.10,
+    "渠道履约": 0.08
+  },
+  "score_parameters": {
+    "operating_base": 45,
+    "opening_month_cap": 36,
+    "opening_month_factor": 0.8,
+    "rating_baseline": 3.5,
+    "rating_factor": 18,
+    "revenue_unit": 10000,
+    "revenue_bonus_cap": 20,
+    "negative_keyword_penalty": 3,
+    "rent_penalty": 120,
+    "labor_penalty": 60,
+    "purchase_penalty": 40,
+    "debt_penalty": 80,
+    "mature_brand_score": 78,
+    "other_brand_score": 66,
+    "competition_base": 100,
+    "competitor_penalty": 5,
+    "contract_risk_score": 52,
+    "contract_normal_score": 86,
+    "opinion_risk_score": 58,
+    "opinion_normal_score": 84,
+    "fulfillment_rating_factor": 18,
+    "fulfillment_base": 8
+  },
+  "risk_levels": [
+    {
+      "minimum_score": 80,
+      "level": "低风险",
+      "credit_suggestion": "建议进入简化授信流程，可结合流水原件和征信信息复核额度。"
+    },
+    {
+      "minimum_score": 65,
+      "level": "中低风险",
+      "credit_suggestion": "建议审慎授信，控制额度并设置月度经营数据回访。"
+    },
+    {
+      "minimum_score": 50,
+      "level": "中风险",
+      "credit_suggestion": "建议补充材料后再审，重点核验现金流、租约和负债情况。"
+    },
+    {
+      "minimum_score": 0,
+      "level": "高风险",
+      "credit_suggestion": "暂不建议直接授信，应先完成人工尽调和风险缓释安排。"
+    }
+  ],
+  "risk_thresholds": {
+    "high_rent_ratio": 0.18,
+    "high_debt_ratio": 0.35,
+    "high_competitor_density": 8
+  },
+  "strength_thresholds": {
+    "stable_opening_months": 18,
+    "strong_takeaway_rating": 4.6,
+    "strong_monthly_revenue": 180000
+  },
+  "watch_thresholds": {
+    "takeaway_rating_floor": 4.3
+  }
+}

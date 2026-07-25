@@ -528,7 +528,7 @@ def get_region_intel(city: str | None = None, session: Session | None = None) ->
     store_rows = [row for row in (database_rows.get("city_store_distribution.csv") or _read_csv("city_store_distribution.csv")) if not city or row.get("city") == city]
     competition_rows = [row for row in (database_rows.get("region_competition.csv") or _read_csv("region_competition.csv")) if not city or row.get("city") == city]
     if not store_rows and city:
-        return get_region_intel(None, session)
+        raise LookupError(f"No region data for city: {city}")
 
     selected_city = city or (store_rows[0].get("city") if store_rows else "杭州")
     total_stores = sum(_to_int(row.get("store_count_estimate")) for row in store_rows)
