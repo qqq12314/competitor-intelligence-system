@@ -1,4 +1,4 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 export type ResultStatus = 'success' | 'insufficient_data' | 'degraded' | 'error'
 
@@ -60,77 +60,40 @@ export interface FranchiseAgentResponse {
   cache_hit: boolean
 }
 
-export interface KnowledgeStatus {
-  ready: boolean
-  document_count: number
-  chunk_count: number
-  brands: Record<string, number>
-  document_types: Record<string, number>
-  persist_directory: string
-  embedding_model: string
-  updated_at: string | null
-}
-
-export interface FrameworkStatus {
-  architecture: string
-  agent_count: number
-  agent_name: string
-  multi_agent: boolean
-  rag_role: string
-  tool_count: number
-  chains: string[]
-  callbacks_enabled: boolean
-  structured_output: string
-  langchain_version: string
-  llm: Record<string, unknown>
-  knowledge: KnowledgeStatus
-  embedding_model: string
-}
-
-export interface AgentTool {
-  name: string
-  description: string
-  parameters: Record<string, unknown>
-}
-
 async function requestJson<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) },
-    ...options,
-  })
-  if (!response.ok) {
-    const detail = await response.text()
-    throw new Error(detail || `API 请求失败：${response.status}`)
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), 120_000)
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) },
+      signal: controller.signal,
+      ...options,
+    })
+    if (!response.ok) {
+      let message = ''
+      try {
+        const payload = await response.json() as { detail?: string }
+        message = payload.detail || ''
+      } catch {
+        message = await response.text()
+      }
+      throw new Error(message || `分析服务返回异常（${response.status}）`)
+    }
+    return response.json() as Promise<T>
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('本次分析用时较长，请稍后重试。')
+    }
+    if (error instanceof TypeError) {
+      throw new Error('分析服务暂时无法连接，请稍后重试。')
+    }
+    throw error
+  } finally {
+    window.clearTimeout(timeout)
   }
-  return response.json() as Promise<T>
 }
 
-export function fetchFramework() {
-  return requestJson<FrameworkStatus>('/franchise-agent/framework')
-}
-
-export function fetchTools() {
-  return requestJson<{ count: number; tools: AgentTool[] }>('/franchise-agent/tools')
-}
-
-export function fetchKnowledgeStatus() {
-  return requestJson<KnowledgeStatus>('/knowledge/status')
-}
-
-export function searchKnowledge(payload: {
-  query: string
-  brand_id?: string
-  city?: string
-  document_type?: string
-  top_k?: number
-}) {
-  return requestJson<{ query: string; count: number; evidence: Evidence[] }>('/knowledge/search', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
-}
-
-export function runFranchiseAgent(payload: {
+export function runFranchiseAnalysis(payload: {
   question: string
   brand_id?: string
   city?: string
