@@ -118,3 +118,5 @@ pnpm build
 当前知识库和 CSV 中的费用、门店、政策与舆情数据主要用于课程演示，部分来源为第三方或示例 URL，不能视为实时官方事实。正式加盟决策前必须向品牌官方、商务主管部门、拟选址物业和现有加盟商交叉核验。
 
 详细实施说明见 [docs/single-agent-rag-implementation.md](docs/single-agent-rag-implementation.md)。
+
+队友提供的品牌、政策、舆情、城市、行情和财务 CSV 已接入安全导入流程。使用方法见 [docs/team-data-import-guide.md](docs/team-data-import-guide.md)。

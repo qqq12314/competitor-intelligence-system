@@ -1,0 +1,67 @@
+{
+  "batch_id": "2026-07-26",
+  "source_path": "team_data_20260726",
+  "dry_run": false,
+  "raw_directory": "data/raw/team_data_20260726",
+  "processed_directory": "data/processed/team_data_20260726",
+  "database_backup": "data/backups/tea_coffee_risk_before_team_import_2026-07-26_20260726_143501.db",
+  "input_rows": {
+    "投资风险评估表.csv": 50,
+    "financial_data_raw.csv": 7,
+    "news_sentiment.csv": 13,
+    "brand_info.csv": 14,
+    "stock_info.csv": 9,
+    "franchise_policy.csv": 9
+  },
+  "output_rows": {
+    "brand_profile.csv": 13,
+    "franchise_policy.csv": 9,
+    "news_sentiment.csv": 13,
+    "market_quote.csv": 9,
+    "financial_data_normalized.csv": 7,
+    "city_store_distribution.csv": 50,
+    "region_competition.csv": 50,
+    "source_registry.csv": 6
+  },
+  "database_changes": {
+    "brand_profiles": {
+      "inserted": 0,
+      "updated": 13,
+      "skipped": 0
+    },
+    "franchise_policies": {
+      "inserted": 0,
+      "updated": 9,
+      "skipped": 0
+    },
+    "news_sentiments": {
+      "inserted": 0,
+      "updated": 0,
+      "skipped": 13
+    },
+    "market_quotes": {
+      "inserted": 0,
+      "updated": 9,
+      "skipped": 0
+    },
+    "city_store_distributions": {
+      "inserted": 0,
+      "updated": 50,
+      "skipped": 0
+    },
+    "region_competitions": {
+      "inserted": 0,
+      "updated": 50,
+      "skipped": 0
+    },
+    "source_registry": {
+      "inserted": 0,
+      "updated": 6,
+      "skipped": 0
+    }
+  },
+  "warnings": [
+    "品牌标识重复并已合并：shanghai_auntie -> 沪上阿姨 (auntea_jenny)"
+  ],
+  "errors": []
+}

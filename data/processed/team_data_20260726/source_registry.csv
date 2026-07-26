@@ -1,0 +1,7 @@
+﻿dataset_name,source_name,source_url,collect_method,update_frequency,owner_role,note
+brand_profile,队友品牌基础信息,,队友采集 CSV，经标准化脚本转换,按批次,数据采集组 / 后端组,原始文件：brand_info.csv；批次：2026-07-26；关键数据须核验来源。
+franchise_policy,队友加盟政策,,队友采集 CSV，经标准化脚本转换,按批次,数据采集组 / 后端组,原始文件：franchise_policy.csv；批次：2026-07-26；关键数据须核验来源。
+news_sentiment,队友新闻舆情,,队友采集 CSV，经标准化脚本转换,按批次,数据采集组 / 后端组,原始文件：news_sentiment.csv；批次：2026-07-26；关键数据须核验来源。
+market_quote,队友股票行情,,队友采集 CSV，经标准化脚本转换,按批次,数据采集组 / 后端组,原始文件：stock_info.csv；批次：2026-07-26；关键数据须核验来源。
+financial_data,队友财务数据,,队友采集 CSV，经标准化脚本转换,按批次,数据采集组 / 后端组,原始文件：financial_data_raw.csv；批次：2026-07-26；关键数据须核验来源。
+city_risk_sample,队友城市品牌风险样本,,队友采集 CSV，经标准化脚本转换,按批次,数据采集组 / 后端组,原始文件：投资风险评估表.csv；批次：2026-07-26；关键数据须核验来源。

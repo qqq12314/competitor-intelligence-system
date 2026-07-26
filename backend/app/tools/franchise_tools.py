@@ -131,22 +131,29 @@ def build_franchise_tools(session: Session, collector: ToolExecutionCollector) -
     def analyze_region_impl(brand_id: str, city: str) -> str:
         def execute() -> UnifiedToolResult:
             try:
+                target = get_brand_intel(brand_id, session)
+                target_name = target.brand_name
+            except KeyError:
+                target = None
+                target_name = brand_id
+            try:
                 region = get_region_intel(city, session)
             except LookupError:
                 return UnifiedToolResult(
                     status="insufficient_data",
                     data={"brand_id": brand_id, "city": city},
-                    missing_fields=[f"{city}城市门店分布", f"{city}地区竞争数据"],
+                    missing_fields=[
+                        f"{city}城市门店分布",
+                        f"{city}地区竞争数据",
+                        f"{target_name}在{city}的门店与竞争数据",
+                    ],
                 )
-            try:
-                target = get_brand_intel(brand_id, session)
-                target_name = target.brand_name
+            if target:
                 target_has_city_data = any(
                     item.city == city and item.target_brand == target_name
                     for item in target.region_competition
                 )
-            except KeyError:
-                target_name = brand_id
+            else:
                 target_has_city_data = False
             missing = [] if target_has_city_data else [f"{target_name}在{city}的门店数"]
             return UnifiedToolResult(
@@ -231,7 +238,13 @@ def build_franchise_tools(session: Session, collector: ToolExecutionCollector) -
             except LookupError:
                 region = None
                 region_risk = 88.0
-                missing.extend([f"{city}城市门店分布", f"{city}地区竞争数据"])
+                missing.extend(
+                    [
+                        f"{city}城市门店分布",
+                        f"{city}地区竞争数据",
+                        f"{brand.brand_name}在{city}的门店与竞争数据",
+                    ]
+                )
 
             negative_news = sum(1 for item in brand.news if item.sentiment == "negative")
             sentiment_risk = min(35 + negative_news * 18, 90)

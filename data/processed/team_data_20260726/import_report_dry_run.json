@@ -1,0 +1,31 @@
+{
+  "batch_id": "2026-07-26",
+  "source_path": "team_data_20260726",
+  "dry_run": true,
+  "raw_directory": "data/raw/team_data_20260726",
+  "processed_directory": "data/processed/team_data_20260726",
+  "database_backup": null,
+  "input_rows": {
+    "stock_info.csv": 9,
+    "financial_data_raw.csv": 7,
+    "投资风险评估表.csv": 50,
+    "news_sentiment.csv": 13,
+    "franchise_policy.csv": 9,
+    "brand_info.csv": 14
+  },
+  "output_rows": {
+    "brand_profile.csv": 13,
+    "franchise_policy.csv": 9,
+    "news_sentiment.csv": 13,
+    "market_quote.csv": 9,
+    "financial_data_normalized.csv": 7,
+    "city_store_distribution.csv": 50,
+    "region_competition.csv": 50,
+    "source_registry.csv": 6
+  },
+  "database_changes": {},
+  "warnings": [
+    "品牌标识重复并已合并：shanghai_auntie -> 沪上阿姨 (auntea_jenny)"
+  ],
+  "errors": []
+}
