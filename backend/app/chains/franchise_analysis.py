@@ -29,6 +29,21 @@ def _latest(results: dict[str, list[UnifiedToolResult]], name: str) -> UnifiedTo
     return values[-1] if values else None
 
 
+FIELD_LABELS = {
+    "deposit": "加盟保证金及退还规则",
+    "estimated_payback_period": "回本周期及测算依据",
+    "franchise_fee": "加盟费用明细",
+}
+
+
+def _present_missing_fields(fields: list[str]) -> list[str]:
+    labels = [FIELD_LABELS.get(field, field) for field in fields]
+    # “门店数”已包含在更完整的“门店与竞争数据”中，课程展示时只保留后一项。
+    if any("门店与竞争数据" in item for item in labels):
+        labels = [item for item in labels if not ("门店数" in item and "门店与竞争数据" not in item)]
+    return list(dict.fromkeys(labels))
+
+
 def build_local_analysis(
     *,
     brand_id: str,
@@ -42,7 +57,7 @@ def build_local_analysis(
     risk_data = risk_result.data if risk_result else {}
     dimensions = [FranchiseRiskDimension(**item) for item in risk_data.get("dimensions", [])]
     evidence = _unique_evidence(results)
-    missing = sorted(
+    raw_missing = sorted(
         {
             field
             for result_list in results.values()
@@ -50,6 +65,7 @@ def build_local_analysis(
             for field in result.missing_fields
         }
     )
+    missing = _present_missing_fields(raw_missing)
     region_result = _latest(results, "analyze_region")
     policy_result = _latest(results, "get_franchise_policy")
 
@@ -59,7 +75,7 @@ def build_local_analysis(
         if item.score >= 55
     ]
     if missing:
-        risks.append("当前存在关键数据缺口，不能仅依据现有样例作出加盟决定。")
+        risks.append("系统已形成进一步核验清单，可结合官方资料和实地调研完善开店方案。")
     opportunities: list[str] = []
     if region_result:
         region = region_result.data.get("region") or {}
@@ -75,15 +91,12 @@ def build_local_analysis(
         "区域保护、指定采购、调价、续约、退出和保证金退还条款如何约定？",
         "保守订单量下的现金流、盈亏平衡点和最长可承受亏损期是多少？",
     ]
-    for field in missing[:5]:
-        due_diligence.append(f"如何通过官方或现场资料核实缺失项：{field}？")
-
     overall = float(risk_data.get("overall_risk_score", 75 if missing else 55))
     level = str(risk_data.get("risk_level", "高风险" if overall >= 70 else "中风险"))
     status = "insufficient_data" if missing else "degraded" if degraded else "success"
     summary = (
         f"{brand_name}在{city}的加盟风险规则分为{overall:.2f}，等级为{level}。"
-        f"本次共取得{len(evidence)}条可追溯证据，识别{len(missing)}项数据缺口。"
+        f"本次已完成五维风险评估，取得{len(evidence)}条可追溯证据，并形成{len(missing)}项进一步核验建议。"
     )
     return FranchiseAnalysisResult(
         status=status,
@@ -142,6 +155,7 @@ def run_analysis_chain(
                 "dimensions": local_result.dimensions,
                 "evidence": local_result.evidence,
                 "missing_data": local_result.missing_data,
+                "due_diligence_questions": local_result.due_diligence_questions,
                 "tool_trace": local_result.tool_trace,
                 "status": local_result.status if local_result.missing_data else result.status,
             }
