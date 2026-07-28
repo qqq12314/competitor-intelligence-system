@@ -36,10 +36,6 @@ const brands = [
   { id: 'chagee', name: '霸王茶姬' },
   { id: 'starbucks', name: '星巴克' },
   { id: 'nayuki', name: '奈雪的茶' },
-  { id: 'chabaidao', name: '茶百道' },
-  { id: 'guming', name: '古茗' },
-  { id: 'heytea', name: '喜茶' },
-  { id: 'auntea_jenny', name: '沪上阿姨' },
 ]
 
 const cities = ['杭州', '北京', '上海', '广州', '天津', '重庆', '成都', '深圳', '武汉', '郑州']

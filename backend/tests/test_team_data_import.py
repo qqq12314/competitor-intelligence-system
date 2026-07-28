@@ -11,6 +11,7 @@ from app.services.team_data_import import (
     read_zip_csvs,
     transform,
 )
+from app.services.brand_intel import _merge_rows, _read_csv, get_region_intel
 
 
 def test_normalization_rules():
@@ -20,6 +21,30 @@ def test_normalization_rules():
     assert normalize_city("重庆市") == "重庆"
     assert parse_store_count("200+") == (200, "200+")
     assert parse_store_count("48,300") == (48300, "48,300")
+
+
+def test_runtime_data_merges_collected_and_processed_batches():
+    stores = _read_csv("city_store_distribution.csv")
+    cities = {row["city"] for row in stores}
+
+    assert {"杭州", "成都", "北京", "广州", "天津", "重庆"} <= cities
+    assert len(stores) == 57
+
+
+def test_merge_keeps_existing_values_when_newer_row_is_blank():
+    merged = _merge_rows(
+        "franchise_policy.csv",
+        [{"brand_name": "测试品牌", "deposit": "2万元", "franchise_fee": "1万元"}],
+        [{"brand_name": "测试品牌", "deposit": "", "franchise_fee": "8000元"}],
+    )
+
+    assert merged == [{"brand_name": "测试品牌", "deposit": "2万元", "franchise_fee": "8000元"}]
+
+
+def test_covered_cities_keep_distinct_region_scores():
+    scores = {city: get_region_intel(city).franchise_risk_score for city in ("杭州", "成都", "北京", "广州", "上海", "天津", "重庆")}
+
+    assert len(set(scores.values())) >= 5
 
 
 def test_zip_validation_rejects_missing_files(tmp_path):

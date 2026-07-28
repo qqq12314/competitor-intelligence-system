@@ -37,7 +37,10 @@ from app.models.brand_intel import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-DATA_DIR = REPO_ROOT / "data" / "collected"
+DATA_DIRS = (
+    REPO_ROOT / "data" / "collected",
+    REPO_ROOT / "data" / "processed" / "team_data_20260726",
+)
 CACHE_DIR = REPO_ROOT / "backend" / ".runtime_cache"
 CACHE_PATH = CACHE_DIR / "ai_analysis_cache.json"
 
@@ -52,12 +55,48 @@ DATASET_FILES = {
 }
 
 
+ROW_KEYS: dict[str, tuple[str, ...]] = {
+    "brand_profile.csv": ("brand_id",),
+    "market_quote.csv": ("brand_name", "stock_code", "trade_date"),
+    "news_sentiment.csv": ("brand_name", "news_title", "publish_date"),
+    "city_store_distribution.csv": ("city", "brand_name"),
+    "franchise_policy.csv": ("brand_name",),
+    "region_competition.csv": ("city", "target_brand"),
+    "source_registry.csv": ("source_id", "dataset_name", "source_name"),
+}
+
+
+def _row_key(name: str, row: dict[str, str]) -> tuple[str, ...]:
+    fields = ROW_KEYS.get(name, tuple(row))
+    values = tuple((row.get(field) or "").strip() for field in fields)
+    # Source registries use different schemas in collected and processed data.
+    # Ignore empty fields so both formats remain independently addressable.
+    return tuple(value for value in values if value) or (str(id(row)),)
+
+
+def _merge_rows(name: str, *groups: list[dict[str, str]]) -> list[dict[str, str]]:
+    merged: dict[tuple[str, ...], dict[str, str]] = {}
+    for rows in groups:
+        for row in rows:
+            key = _row_key(name, row)
+            if key in merged:
+                # Later sources are newer, but blank values must not erase useful
+                # fields already collected from another batch.
+                merged[key].update({field: value for field, value in row.items() if value not in (None, "")})
+            else:
+                merged[key] = dict(row)
+    return list(merged.values())
+
+
 def _read_csv(name: str) -> list[dict[str, str]]:
-    path = DATA_DIR / name
-    if not path.exists():
-        return []
-    with path.open("r", encoding="utf-8-sig", newline="") as file:
-        return [dict(row) for row in csv.DictReader(file)]
+    groups: list[list[dict[str, str]]] = []
+    for directory in DATA_DIRS:
+        path = directory / name
+        if not path.exists():
+            continue
+        with path.open("r", encoding="utf-8-sig", newline="") as file:
+            groups.append([dict(row) for row in csv.DictReader(file)])
+    return _merge_rows(name, *groups)
 
 
 def _row_count(name: str) -> int:
@@ -197,7 +236,7 @@ def _load_database_rows(session: Session | None) -> dict[str, list[dict[str, str
 
 def _read_dataset(name: str, session: Session | None = None) -> list[dict[str, str]]:
     database_rows = _load_database_rows(session).get(name, [])
-    return database_rows if database_rows else _read_csv(name)
+    return _merge_rows(name, _read_csv(name), database_rows)
 
 
 def _blank_to_none(value: str | None) -> str | None:
@@ -432,14 +471,18 @@ def _build_brand_item(
 
 def _load_brand_items(session: Session | None = None) -> list[BrandIntelItem]:
     database_rows = _load_database_rows(session)
-    brand_rows = database_rows.get("brand_profile.csv") or _read_csv("brand_profile.csv")
-    quote_rows = {row.get("brand_name"): row for row in (database_rows.get("market_quote.csv") or _read_csv("market_quote.csv"))}
+    brand_rows = _merge_rows("brand_profile.csv", _read_csv("brand_profile.csv"), database_rows.get("brand_profile.csv", []))
+    quote_data = _merge_rows("market_quote.csv", _read_csv("market_quote.csv"), database_rows.get("market_quote.csv", []))
+    quote_rows = {row.get("brand_name"): row for row in quote_data}
     news_by_brand: dict[str, list[dict[str, str]]] = defaultdict(list)
-    for row in database_rows.get("news_sentiment.csv") or _read_csv("news_sentiment.csv"):
+    news_data = _merge_rows("news_sentiment.csv", _read_csv("news_sentiment.csv"), database_rows.get("news_sentiment.csv", []))
+    for row in news_data:
         news_by_brand[row.get("brand_name")].append(row)
-    policy_rows = {row.get("brand_name"): row for row in (database_rows.get("franchise_policy.csv") or _read_csv("franchise_policy.csv"))}
+    policy_data = _merge_rows("franchise_policy.csv", _read_csv("franchise_policy.csv"), database_rows.get("franchise_policy.csv", []))
+    policy_rows = {row.get("brand_name"): row for row in policy_data}
     competition_by_brand: dict[str, list[dict[str, str]]] = defaultdict(list)
-    for row in database_rows.get("region_competition.csv") or _read_csv("region_competition.csv"):
+    competition_data = _merge_rows("region_competition.csv", _read_csv("region_competition.csv"), database_rows.get("region_competition.csv", []))
+    for row in competition_data:
         competition_by_brand[row.get("target_brand")].append(row)
 
     return [
@@ -525,8 +568,10 @@ def get_brand_summary(session: Session | None = None) -> BrandIntelSummary:
 
 def get_region_intel(city: str | None = None, session: Session | None = None) -> RegionIntel:
     database_rows = _load_database_rows(session)
-    store_rows = [row for row in (database_rows.get("city_store_distribution.csv") or _read_csv("city_store_distribution.csv")) if not city or row.get("city") == city]
-    competition_rows = [row for row in (database_rows.get("region_competition.csv") or _read_csv("region_competition.csv")) if not city or row.get("city") == city]
+    store_data = _merge_rows("city_store_distribution.csv", _read_csv("city_store_distribution.csv"), database_rows.get("city_store_distribution.csv", []))
+    competition_data = _merge_rows("region_competition.csv", _read_csv("region_competition.csv"), database_rows.get("region_competition.csv", []))
+    store_rows = [row for row in store_data if not city or row.get("city") == city]
+    competition_rows = [row for row in competition_data if not city or row.get("city") == city]
     if not store_rows and city:
         raise LookupError(f"No region data for city: {city}")
 
@@ -544,7 +589,11 @@ def get_region_intel(city: str | None = None, session: Session | None = None) ->
         )
         for row in sorted(store_rows, key=lambda item: _to_int(item.get("store_count_estimate")), reverse=True)[:3]
     ]
-    risk_score = min(35 + total_stores / 80 + _level_score(competition_level), 92)
+    # Normalize density instead of letting large cities immediately hit a hard
+    # ceiling. This keeps the seven covered cities distinguishable in reports.
+    density_risk = min(total_stores / 2500, 1) * 30
+    competition_risk = _level_score(competition_level) * 0.75
+    risk_score = min(30 + density_risk + competition_risk, 95)
 
     return RegionIntel(
         city=selected_city,
